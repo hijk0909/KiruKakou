@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KiruKakou</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<script type="module">
+    import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
+    import { MainScreen } from './MainScreen.js';
+    import { UIScene } from './UI.js';
+
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: '#000000',
+        scene: [MainScreen, UIScene]
+    };
+
+    const game = new Phaser.Game(config);
+</script>
+</body>
+</html>
