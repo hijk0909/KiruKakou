@@ -1,8 +1,15 @@
 // Effect.js
+import { GameState } from './GameState.js';
 
 export const EFF_TYPE_ENEMY_GET = 0;
 export const EFF_TYPE_FRIEND_GET = 1;
 export const EFF_TYPE_KILL = 2;
+export const EFF_TYPE_HIT = 3;
+export const EFF_TYPE_SCORE = 4;
+
+const EFF_PERIOD_KILL = 60;
+const EFF_PERIOD_HIT = 120;
+const EFF_PERIOD_SCORE = 80;
 
 export class Effect {
     constructor(scene) {
@@ -11,6 +18,8 @@ export class Effect {
         this.pos = new Phaser.Math.Vector2(0, 0);
         this.alive = true;
         this.counter = 0;
+        this.text = null;
+        this.textObject = null;
     }
 
     setType(type, pos) {
@@ -18,8 +27,23 @@ export class Effect {
         this.pos = pos.clone(); // Phaser.Math.Vector2
         this.alive = true;
         if (this.type === EFF_TYPE_KILL) {
-            this.counter = 60;
+            this.counter = EFF_PERIOD_KILL;
+        } else if (this.type === EFF_TYPE_HIT){
+            this.counter = EFF_PERIOD_HIT;
+        } else if (this.type === EFF_TYPE_SCORE){
+            this.counter = EFF_PERIOD_SCORE;
         }
+    }
+
+    setText(txt) {
+        // console.log(`setText: ${txt}`);
+        // console.log('this:', this);
+        // console.log(`txt: ${this.text} pos.x:${this.pos.x} pos.y:${this.pos.y}`);
+        this.text = txt;
+        this.textObject = this.scene.add.text(this.pos.x, this.pos.y, this.text, {
+            fontSize: '24px',
+            color: '#e0e0e0'
+        }).setOrigin(0.5, 0.5);
     }
 
     isAlive() {
@@ -32,13 +56,34 @@ export class Effect {
 
     move() {
         if (this.type === EFF_TYPE_ENEMY_GET) {
-            this.pos.y -= 10;
+            let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
+            if (distance < 10){
+                GameState.energy = Math.min( GameState.energy - 10, GameState.maxEnergy);
+                this.alive = false;
+            }
         } else if (this.type === EFF_TYPE_FRIEND_GET) {
-            this.pos.y -= 10;
+            let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
+            if (distance < 10){
+                GameState.energy = Math.min( GameState.energy + 5, GameState.maxEnergy);
+                this.alive = false;
+            }
         } else if (this.type === EFF_TYPE_KILL){
             this.counter -= 1;
             if ( this.counter <= 0){
-                this.alive =false;
+                this.alive = false;
+            }
+        } else if (this.type === EFF_TYPE_HIT) {
+            this.counter -= 1;
+            if ( this.counter <= 0){
+                this.alive = false;
+            }
+        } else if (this.type === EFF_TYPE_SCORE) {
+            this.pos.y -= 0.25;
+            this.counter -= 1;
+            if (this.counter <= 0){
+                this.alive = false;
+                this.textObject.destroy();
+                this.textObject = null; 
             }
         }
 
@@ -68,6 +113,52 @@ export class Effect {
             graphics.moveTo(this.pos.x + 10, this.pos.y - 10);
             graphics.lineTo(this.pos.x - 10, this.pos.y + 10);
             graphics.strokePath();
+        } else if (this.type === EFF_TYPE_HIT) {
+            const a = this.counter / EFF_PERIOD_HIT;
+            const r = (EFF_PERIOD_HIT - this.counter) + 10;
+            graphics.lineStyle(4, 0xffff00, a);
+            draw_star(graphics, this.pos, r);
+        } else if (this.type === EFF_TYPE_SCORE) {
+            this.textObject.setPosition(this.pos.x, this.pos.y);
         }
     }
+}
+
+function draw_star(graphics, pos, r){
+    
+    graphics.beginPath();
+
+    const points = [];
+    for (let i = 0; i < 10; i++) {
+        const angle = (i * 36 - 90) * Math.PI / 180; // 角度（ラジアン）
+        const radius = i % 2 === 0 ? r : r/2; // 偶数番目が外側、奇数番目が内側
+        const x = pos.x + radius * Math.cos(angle);
+        const y = pos.y + radius * Math.sin(angle);
+        points.push({ x, y });
+    }
+
+    graphics.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        graphics.lineTo(points[i].x, points[i].y);
+    }
+    graphics.lineTo(points[0].x, points[0].y); // 始点に戻る
+
+    graphics.strokePath();
+}
+
+function move_to(pos, target, v){
+
+    let dx = target.x - pos.x;
+    let dy = target.y - pos.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < 0.0001) return 0;
+
+    let ratio = v / distance;
+    pos.x += dx * ratio;
+    pos.y += dy * ratio;
+
+    distance = Math.sqrt((target.x - pos.x) * (target.x - pos.x) + (target.y - pos.y) * (target.y - pos.y));
+
+    return distance
 }

@@ -1,6 +1,6 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
-import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL } from './Effect.js';
+import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE } from './Effect.js';
 import { UIScene } from './UI.js';
 import { GameState } from './GameState.js';
 
@@ -20,7 +20,7 @@ export class MainScreen extends Phaser.Scene {
         this.characters = [];
         this.effects = [];
         this.spawnTimer = 0;
-        this.spawnInterval = 1000;
+        this.spawnInterval = 1800;
         this.pathPoints = [];
         this.pathCounter = 0;
         this.loop = null;
@@ -28,7 +28,7 @@ export class MainScreen extends Phaser.Scene {
         this.pathLength = 0;
         this.intersections = [];
         this.pathState = PATH_STATE_NONE;
-        this.num_characters = 1;
+        this.scoreMultiple = 1;
     }
 
     preload() {
@@ -54,6 +54,16 @@ export class MainScreen extends Phaser.Scene {
 
         this.characters = [];
         this.effects = [];
+
+        GameState.energy = 0;
+        this.scoreMultiple = 1;
+
+        if (GameState.stage === 1){
+            this.spawnInterval = 1800;
+        } else {
+            this.spawnInterval = 1000;
+        }
+        this.spawnTimer = this.spawnInterval;
     }
 
     onPointerDown(pointer) {
@@ -108,6 +118,7 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.lineStyle(10, 0xffee00, 1.0);
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.pathCounter = PATH_COUNTER_HIT;
+            this.scoreMultiple = 1;
         } else {
         // 交差数２以上（軌跡の発効は不成立）
             this.pathState = PATH_STATE_FAILED;
@@ -143,29 +154,46 @@ export class MainScreen extends Phaser.Scene {
             const square = ch.get_collision();
  
             if (this.pathState === PATH_STATE_ENCIRCLE && polygonIntersectsRect(loop, square)) {
-                // 囲まれた際の処理（まだ空でOK）
+                // 囲まれた際の処理
+                const type = ch.get_type();
+                let eff = new Effect(this);
+                if ( type === CH_TYPE_ENEMY ){
+                    eff.setType(EFF_TYPE_ENEMY_GET, ch.get_position());
+                } else if ( type === CH_TYPE_FRIEND ){
+                    eff.setType(EFF_TYPE_FRIEND_GET, ch.get_position());
+                }
+                this.effects.push(eff);
+                ch.setAlive(false);
+            } else if (this.pathState === PATH_STATE_HIT && pathIntersectsRect(path, square)) {
+                // 斬られた際の処理
                 const type = ch.get_type();
                 if ( type === CH_TYPE_ENEMY ){
                     let eff = new Effect(this);
-                    eff.setType(EFF_TYPE_ENEMY_GET, ch.get_position());
+                    eff.setType(EFF_TYPE_HIT, ch.get_position());
                     this.effects.push(eff);
+                    let score = 100 * this.scoreMultiple;
+                    GameState.score += score;
+                    this.scoreMultiple *= 2;
+                    let eff2 = new Effect(this);
+                    eff2.setType(EFF_TYPE_SCORE, ch.get_position());
+                    eff2.setText(score.toString());
+                    this.effects.push(eff2);
                 } else if ( type === CH_TYPE_FRIEND ){
                     let eff = new Effect(this);
-                    eff.setType(EFF_TYPE_FRIEND_GET, ch.get_position());
+                    eff.setType(EFF_TYPE_KILL, ch.get_position());
                     this.effects.push(eff);
+                    GameState.score -= 200;
+                    this.scoreMultiple = 1;
                 }
                 ch.setAlive(false);
-            } else if (this.pathState === PATH_STATE_HIT && pathIntersectsRect(path, square)) {
-                // 斬られた際の処理（まだ空でOK）
-                let eff = new Effect(this);
-                eff.setType(EFF_TYPE_KILL, ch.get_position());
-                this.effects.push(eff);
-                ch.setAlive(false);
             } else if (this.pathState === PATH_STATE_MAKING && pathIntersectsRect(path, square)) {
-                // 作成途中で敵機に触れられた処理（まだ空でOK）
-                console.log(`GameOver: ${this.pathState}, pathIntersects: ${pathIntersectsRect(path, square)}`);
-                this.scene.stop('UIScene');
-                this.scene.start('GameOverScreen');
+                // 作成途中で敵機に触れられた処理
+                const type = ch.get_type();
+                if ( type === CH_TYPE_ENEMY){
+                    this.scene.stop('UIScene');
+                    this.scene.start('GameOverScreen');
+                    // console.log(`GameOver: ${this.pathState}, pathIntersects: ${pathIntersectsRect(path, square)}`);
+                }
             }
             if (!ch.isAlive()) {
                 this.characters.splice(i, 1);
@@ -200,8 +228,9 @@ export class MainScreen extends Phaser.Scene {
         }
 
         // ステージクリア
-        if (this.num_characters === 0) {
-            GameState.stage++;
+        if (GameState.energy >= GameState.maxEnergy) {
+            GameState.stage += 1;
+            // console.log(`StageClear: ${GameState.stage}, maxStage: ${GameState.maxStage}`);
             if (GameState.stage > GameState.maxStage) {
                 this.scene.stop('UIScene');
                 this.scene.start('GameClearScreen');

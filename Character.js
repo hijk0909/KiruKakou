@@ -1,4 +1,5 @@
 // Character.js
+import { GameState } from './GameState.js';
 
 export const CH_TYPE_ENEMY = 0;
 export const CH_TYPE_FRIEND = 1;
@@ -32,7 +33,11 @@ export class Character {
 
     move() {
         if (this.type === CH_TYPE_ENEMY) {
-            this.pos.x += 1;
+            if (GameState.stage === 1){
+                this.pos.x += 1;
+            } else {
+                this.pos.x += 2;
+            }
         } else if (this.type === CH_TYPE_FRIEND) {
             this.pos.x -= 1;
         }
@@ -47,9 +52,9 @@ export class Character {
         if (this.type === CH_TYPE_ENEMY) {
             graphics.fillStyle(0xff0000, 1);
             graphics.beginPath();
-            graphics.moveTo(this.pos.x, this.pos.y - 20);
-            graphics.lineTo(this.pos.x - 20, this.pos.y + 20);
-            graphics.lineTo(this.pos.x + 20, this.pos.y + 20);
+            graphics.moveTo(this.pos.x, this.pos.y + 20);
+            graphics.lineTo(this.pos.x - 20, this.pos.y - 20);
+            graphics.lineTo(this.pos.x + 20, this.pos.y - 20);
             graphics.closePath();
             graphics.fillPath();
         } else if (this.type === CH_TYPE_FRIEND) {
