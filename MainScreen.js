@@ -1,23 +1,34 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
+import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL } from './Effect.js';
 import { UIScene } from './UI.js';
+import { GameState } from './GameState.js';
 
 const PATH_STATE_NONE = 0;
-const PATH_STATE_HIT = 1;
-const PATH_STATE_ENCIRCLE =2;
+const PATH_STATE_MAKING =1;
+const PATH_STATE_HIT = 2;
+const PATH_STATE_ENCIRCLE =3;
+const PATH_STATE_FAILED =4;
+
+const PATH_COUNTER_ENCIRCLE = 10;
+const PATH_COUNTER_HIT = 120;
+const PATH_COUNTER_FAILED = 60;
 
 export class MainScreen extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScreen' });
         this.characters = [];
+        this.effects = [];
         this.spawnTimer = 0;
         this.spawnInterval = 1000;
         this.pathPoints = [];
+        this.pathCounter = 0;
         this.loop = null;
         this.loopArea = 0;
         this.pathLength = 0;
         this.intersections = [];
         this.pathState = PATH_STATE_NONE;
+        this.num_characters = 1;
     }
 
     preload() {
@@ -26,7 +37,9 @@ export class MainScreen extends Phaser.Scene {
 
     create() {
         this.pathGraphics = this.add.graphics({ lineStyle: { width: 2, color: 0x00ff00 } });
+        this.areaGraphics = this.add.graphics();
         this.charGraphics = this.add.graphics(); 
+        this.effGraphics = this.add.graphics(); 
 
         this.input.on('pointerdown', this.onPointerDown, this);
         this.input.on('pointermove', this.onPointerMove, this);
@@ -34,43 +47,76 @@ export class MainScreen extends Phaser.Scene {
 
         this.scene.launch('UIScene');
         this.ui = this.scene.get('UIScene');
+
+        this.pathPoints = [];
+        this.pathState = PATH_STATE_NONE;
+        this.pathCounter = PATH_COUNTER_HIT;
+
+        this.characters = [];
+        this.effects = [];
     }
 
     onPointerDown(pointer) {
             this.pathPoints = [pointer.position.clone()];
             this.pathGraphics.clear();
+            this.areaGraphics.clear();
+            this.pathGraphics.lineStyle(2, 0xff0000, 0.5);
+            this.pathState = PATH_STATE_MAKING;
     }
 
     onPointerMove(pointer){
-        if (pointer.isDown) {
+        if (pointer.isDown && this.pathState === PATH_STATE_MAKING) {
             this.pathPoints.push(pointer.position.clone());
             this.pathGraphics.strokePoints(this.pathPoints, false);
         }
     }
 
     onPointerUp(pointer){
+        if ( this.pathState != PATH_STATE_MAKING){
+            return;
+        }
+
         // 交差の検出
         this.intersections = findSelfIntersections(this.pathPoints);
         const intersections = this.intersections
 
-        // 交差数１（囲み）
         if (intersections.length === 1) {
+        // 交差数１（囲み）
             this.pathState = PATH_STATE_ENCIRCLE;
             this.loop = extractLoop(this.pathPoints, intersections[0].i1, intersections[0].i2);
             this.loopArea = Math.abs(polygonArea(this.loop));
             this.pathLength = 0
-        // 交差数０（攻撃）
+            this.pathGraphics.lineStyle(4, 0x00ff00, 1.0);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.areaGraphics.fillStyle(0x00ff80, 0.8);
+            this.areaGraphics.beginPath();
+            this.areaGraphics.moveTo(this.loop[0].x, this.loop[0].y);
+            this.loop.forEach(point => {
+                this.areaGraphics.lineTo(point.x, point.y);
+            });
+            this.areaGraphics.closePath();
+            this.areaGraphics.fillPath();
+            this.pathCounter = PATH_COUNTER_ENCIRCLE;
         } else if (intersections.length === 0) {
+        // 交差数０（攻撃）
             this.pathState = PATH_STATE_HIT;
             this.loop = null
             this.loopArea = 0
             this.pathLength = polylineLength(this.pathPoints);
-        // 交差数２以上（軌跡の発効は不成立）
+            this.pathGraphics.lineStyle(20, 0xffee00, 0.5);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.pathGraphics.lineStyle(10, 0xffee00, 1.0);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.pathCounter = PATH_COUNTER_HIT;
         } else {
-            this.pathState = PATH_STATE_NONE;
+        // 交差数２以上（軌跡の発効は不成立）
+            this.pathState = PATH_STATE_FAILED;
             this.loop = null
             this.loopArea = 0
             this.pathLength = 0
+            this.pathGraphics.lineStyle(4, 0x808080, 0.5);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.pathCounter = PATH_COUNTER_FAILED;
         }
 
         this.ui.setIntersections(this.intersections.length);
@@ -95,25 +141,78 @@ export class MainScreen extends Phaser.Scene {
             const loop = this.loop;
             const path = this.pathPoints;
             const square = ch.get_collision();
-
+ 
             if (this.pathState === PATH_STATE_ENCIRCLE && polygonIntersectsRect(loop, square)) {
-                const react = ch.get_reaction_encircled();
                 // 囲まれた際の処理（まだ空でOK）
+                const type = ch.get_type();
+                if ( type === CH_TYPE_ENEMY ){
+                    let eff = new Effect(this);
+                    eff.setType(EFF_TYPE_ENEMY_GET, ch.get_position());
+                    this.effects.push(eff);
+                } else if ( type === CH_TYPE_FRIEND ){
+                    let eff = new Effect(this);
+                    eff.setType(EFF_TYPE_FRIEND_GET, ch.get_position());
+                    this.effects.push(eff);
+                }
                 ch.setAlive(false);
             } else if (this.pathState === PATH_STATE_HIT && pathIntersectsRect(path, square)) {
-                const react = ch.get_reaction_hit();
                 // 斬られた際の処理（まだ空でOK）
+                let eff = new Effect(this);
+                eff.setType(EFF_TYPE_KILL, ch.get_position());
+                this.effects.push(eff);
                 ch.setAlive(false);
+            } else if (this.pathState === PATH_STATE_MAKING && pathIntersectsRect(path, square)) {
+                // 作成途中で敵機に触れられた処理（まだ空でOK）
+                console.log(`GameOver: ${this.pathState}, pathIntersects: ${pathIntersectsRect(path, square)}`);
+                this.scene.stop('UIScene');
+                this.scene.start('GameOverScreen');
             }
-
             if (!ch.isAlive()) {
                 this.characters.splice(i, 1);
             }
         }
+        // エフェクトの処理（逆順で）
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+            const eff = this.effects[i];
+            eff.move();
+            if (!eff.isAlive()) {
+                this.effects.splice(i, 1);
+            }
+        }
 
+        // 軌跡の残存
+        if ( this.pathCounter > 0){
+            this.pathCounter -= 1;
+            if ( this.pathCounter === 0 ){
+                this.pathGraphics.clear();
+                this.areaGraphics.clear();
+                this.pathState = PATH_STATE_NONE;
+            }
+        }
+
+        // キャラクターの再描画
         this.redraw();
-    }
 
+        // ゲームオーバー
+        if (GameState.lives <= 0) {
+            this.scene.stop('UIScene');
+            this.scene.start('GameOverScreen');
+        }
+
+        // ステージクリア
+        if (this.num_characters === 0) {
+            GameState.stage++;
+            if (GameState.stage > GameState.maxStage) {
+                this.scene.stop('UIScene');
+                this.scene.start('GameClearScreen');
+            } else {
+                this.scene.restart(); // 次ステージへ
+            }
+        }
+
+    } // End of update()
+
+    // キャラクターの生成処理
     spawn_character() {
         const h = this.game.canvas.height;
         const y = Phaser.Math.Between(50, h - 50);
@@ -129,12 +228,16 @@ export class MainScreen extends Phaser.Scene {
         this.characters.push(friend);
     }
 
+    // キャラの再描画（軌跡の描画は含まない）
     redraw() {
         this.charGraphics.clear();
-        // キャラ描画（軌跡の描画は含まない）
         for (const ch of this.characters) {
             ch.draw(this.charGraphics);
-        }       
+        }
+        this.effGraphics.clear();
+        for (const eff of this.effects) {
+            eff.draw(this.effGraphics);
+        }
     }
 }
 

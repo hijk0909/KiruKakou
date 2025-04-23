@@ -13,7 +13,7 @@ export class Character {
         this.type = null;
         this.pos = new Phaser.Math.Vector2(0, 0);
         this.alive = true;
-        this.collision = new Phaser.Geom.Rectangle(-10, -10, 20, 20);  // 中心からの相対矩形
+        this.collision = new Phaser.Geom.Rectangle(-20, -20, 40, 40);  // 中心からの相対矩形
     }
 
     setType(type, pos) {
@@ -47,15 +47,23 @@ export class Character {
         if (this.type === CH_TYPE_ENEMY) {
             graphics.fillStyle(0xff0000, 1);
             graphics.beginPath();
-            graphics.moveTo(this.pos.x, this.pos.y - 10);
-            graphics.lineTo(this.pos.x - 10, this.pos.y + 10);
-            graphics.lineTo(this.pos.x + 10, this.pos.y + 10);
+            graphics.moveTo(this.pos.x, this.pos.y - 20);
+            graphics.lineTo(this.pos.x - 20, this.pos.y + 20);
+            graphics.lineTo(this.pos.x + 20, this.pos.y + 20);
             graphics.closePath();
             graphics.fillPath();
         } else if (this.type === CH_TYPE_FRIEND) {
             graphics.fillStyle(0x00ff00, 1);
-            graphics.fillCircle(this.pos.x, this.pos.y, 10);
+            graphics.fillCircle(this.pos.x, this.pos.y, 20);
         }
+    }
+
+    get_position() {
+        return this.pos;
+    }
+
+    get_type(){
+        return this.type;
     }
 
     get_collision() {
@@ -67,11 +75,4 @@ export class Character {
         );
     }
 
-    get_reaction_hit() {
-        return this.type === CH_TYPE_ENEMY ? REACT_TYPE_ADD_SCORE : REACT_TYPE_PENALTY;
-    }
-
-    get_reaction_encircled() {
-        return this.type === CH_TYPE_ENEMY ? REACT_TYPE_PENALTY : REACT_TYPE_POWERUP;
-    }
 }
