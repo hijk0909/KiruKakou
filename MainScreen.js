@@ -1,6 +1,6 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
-import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE } from './Effect.js';
+import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE, EFF_TYPE_CROSS } from './Effect.js';
 import { UIScene } from './UI.js';
 import { GameState } from './GameState.js';
 
@@ -67,33 +67,37 @@ export class MainScreen extends Phaser.Scene {
     }
 
     onPointerDown(pointer) {
-            this.pathPoints = [pointer.position.clone()];
+        // console.log(`PointerDown`);
+        this.pathPoints = [pointer.position.clone()];
             this.pathGraphics.clear();
             this.areaGraphics.clear();
             this.pathGraphics.lineStyle(2, 0xff0000, 0.5);
             this.pathState = PATH_STATE_MAKING;
+            this.pathCounter = -1;
     }
 
     onPointerMove(pointer){
-        if (pointer.isDown && this.pathState === PATH_STATE_MAKING) {
+        if (pointer.isDown && (this.pathState === PATH_STATE_MAKING)) {
             this.pathPoints.push(pointer.position.clone());
             this.pathGraphics.strokePoints(this.pathPoints, false);
         }
     }
 
     onPointerUp(pointer){
+        // console.log(`PointerUp`);
         if ( this.pathState != PATH_STATE_MAKING){
             return;
         }
 
         // 交差の検出
-        this.intersections = findSelfIntersections(this.pathPoints);
+        const is1 = findSelfIntersections(this.pathPoints);
+        this.intersections = mergeCloseIntersections(is1, 5);
         const intersections = this.intersections
 
         if (intersections.length === 1) {
-        // 交差数１（囲み）
+        // 交差数１（囲み成立）
             this.pathState = PATH_STATE_ENCIRCLE;
-            this.loop = extractLoop(this.pathPoints, intersections[0].i1, intersections[0].i2);
+            this.loop = extractLoop(this.pathPoints, intersections[0].i1, intersections[0].i2, intersections[0].point);
             this.loopArea = Math.abs(polygonArea(this.loop));
             this.pathLength = 0
             this.pathGraphics.lineStyle(4, 0x00ff00, 1.0);
@@ -108,7 +112,7 @@ export class MainScreen extends Phaser.Scene {
             this.areaGraphics.fillPath();
             this.pathCounter = PATH_COUNTER_ENCIRCLE;
         } else if (intersections.length === 0) {
-        // 交差数０（攻撃）
+        // 交差数０（攻撃成立）
             this.pathState = PATH_STATE_HIT;
             this.loop = null
             this.loopArea = 0
@@ -128,6 +132,14 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.lineStyle(4, 0x808080, 0.5);
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.pathCounter = PATH_COUNTER_FAILED;
+            for (const isp of intersections) {
+                // console.log(`intersection i1:${isp.i1} (${this.pathPoints[isp.i1].x},${this.pathPoints[isp.i1].y})-(${this.pathPoints[isp.i1+1].x},${this.pathPoints[isp.i1+1].y})\
+                //                           i2:${isp.i2} (${this.pathPoints[isp.i2].x},${this.pathPoints[isp.i2].y})-(${this.pathPoints[isp.i2+1].x},${this.pathPoints[isp.i2+1].y})\
+                //                           x:${isp.point.x} y:${isp.point.y}`);
+                let eff = new Effect(this);
+                eff.setType(EFF_TYPE_CROSS, new Phaser.Math.Vector2(isp.point.x, isp.point.y));
+                this.effects.push(eff);
+            }
         }
 
         this.ui.setIntersections(this.intersections.length);
@@ -211,7 +223,7 @@ export class MainScreen extends Phaser.Scene {
         // 軌跡の残存
         if ( this.pathCounter > 0){
             this.pathCounter -= 1;
-            if ( this.pathCounter === 0 ){
+            if ( this.pathCounter === 0 && this.pathState != PATH_STATE_MAKING){
                 this.pathGraphics.clear();
                 this.areaGraphics.clear();
                 this.pathState = PATH_STATE_NONE;
@@ -270,35 +282,60 @@ export class MainScreen extends Phaser.Scene {
     }
 }
 
-    function findSelfIntersections(points) {
-        const intersections = [];
-        for (let i = 0; i < points.length - 2; i++) {
-            for (let j = i + 2; j < points.length - 1; j++) {
-                if (i === 0 && j === points.length - 2) continue;
-                if (segmentsIntersect(points[i], points[i + 1], points[j], points[j + 1])) {
-                    intersections.push({ i1: i, i2: j });
-                }
+function findSelfIntersections(points) {
+    const intersections = [];
+    for (let i = 0; i < points.length - 2; i++) {
+        for (let j = i + 2; j < points.length - 1; j++) {
+            if (i === 0 && j === points.length - 2) continue;
+            const pt = segmentsIntersectionPoint(points[i], points[i + 1], points[j], points[j + 1]);
+            if (pt) {
+                intersections.push({ i1: i, i2: j, point: pt });
             }
         }
-        return intersections;
     }
+    return intersections;
+}
 
-    function segmentsIntersect(p1, p2, q1, q2) {
-        const d = (p2.x - p1.x) * (q2.y - q1.y) - (p2.y - p1.y) * (q2.x - q1.x);
-        if (d === 0) return false;
-        const t = ((q1.x - p1.x) * (q2.y - q1.y) - (q1.y - p1.y) * (q2.x - q1.x)) / d;
-        const u = ((q1.x - p1.x) * (p2.y - p1.y) - (q1.y - p1.y) * (p2.x - p1.x)) / d;
-        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+function segmentsIntersectionPoint(p1, p2, q1, q2) {
+    const d = (p2.x - p1.x) * (q2.y - q1.y) - (p2.y - p1.y) * (q2.x - q1.x);
+    if (d === 0) return null; // 平行で交差しない
+    
+    const t = ((q1.x - p1.x) * (q2.y - q1.y) - (q1.y - p1.y) * (q2.x - q1.x)) / d;
+    const u = ((q1.x - p1.x) * (p2.y - p1.y) - (q1.y - p1.y) * (p2.x - p1.x)) / d;
+
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        const rx = p1.x + t * (p2.x - p1.x);
+        const ry = p1.y + t * (p2.y - p1.y);
+        return { x: rx, y: ry };
     }
+    return null;
+}
 
-    function extractLoop(points, i1, i2) {
-        const loop = [points[i1]];
-        for (let i = i1 + 1; i <= i2; i++) {
-            loop.push(points[i]);
+function extractLoop(points, i1, i2, intersection) {
+    const loop = [];
+    loop.push(intersection); // 交点からスタート
+    for (let i = i1 + 1; i <= i2; i++) {
+        loop.push(points[i]);
+    }
+    loop.push(intersection); // 交点に戻る
+    return loop;
+}
+
+function mergeCloseIntersections(intersections, threshold = 5) {
+    const merged = [];
+    for (const inter of intersections) {
+        // console.log(`all:inter.rx:${inter.point.x} inter.ry:${inter.point.y}`);
+        const similar = merged.find(m =>
+            Math.hypot(m.point.x - inter.point.x, m.point.y - inter.point.y) < threshold
+        );
+        if (!similar) {
+            merged.push(inter);
+            // console.log(`merge:inter.rx:${inter.point.x} inter.ry:${inter.point.y}`);
         }
-        loop.push(points[i1]);
-        return loop;
     }
+    return merged;
+}
+
 
     function polygonArea(points) {
         let area = 0;

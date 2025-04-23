@@ -6,10 +6,12 @@ export const EFF_TYPE_FRIEND_GET = 1;
 export const EFF_TYPE_KILL = 2;
 export const EFF_TYPE_HIT = 3;
 export const EFF_TYPE_SCORE = 4;
+export const EFF_TYPE_CROSS = 5;
 
 const EFF_PERIOD_KILL = 60;
 const EFF_PERIOD_HIT = 120;
 const EFF_PERIOD_SCORE = 80;
+const EFF_PERIOD_CROSS = 40;
 
 export class Effect {
     constructor(scene) {
@@ -32,6 +34,8 @@ export class Effect {
             this.counter = EFF_PERIOD_HIT;
         } else if (this.type === EFF_TYPE_SCORE){
             this.counter = EFF_PERIOD_SCORE;
+        } else if (this.type === EFF_TYPE_CROSS){
+            this.counter = EFF_PERIOD_CROSS;
         }
     }
 
@@ -85,6 +89,11 @@ export class Effect {
                 this.textObject.destroy();
                 this.textObject = null; 
             }
+        } else if (this.type === EFF_TYPE_CROSS) {
+            this.counter -= 1;
+            if ( this .counter <= 0){
+                this.alive = false;
+            }
         }
 
         const { width, height } = this.scene.game.canvas;
@@ -120,6 +129,14 @@ export class Effect {
             draw_star(graphics, this.pos, r);
         } else if (this.type === EFF_TYPE_SCORE) {
             this.textObject.setPosition(this.pos.x, this.pos.y);
+        } else if (this.type === EFF_TYPE_CROSS) {
+            graphics.lineStyle(1, 0xffffff, 0.9);
+            graphics.beginPath();
+            graphics.moveTo(this.pos.x     , this.pos.y - 10);
+            graphics.lineTo(this.pos.x     , this.pos.y + 10);
+            graphics.moveTo(this.pos.x + 10, this.pos.y     );
+            graphics.lineTo(this.pos.x - 10, this.pos.y     );
+            graphics.strokePath();
         }
     }
 }
