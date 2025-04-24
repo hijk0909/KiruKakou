@@ -13,18 +13,19 @@
 <body>
 <script type="module">
     import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
-    import { TitleScreen } from './TitleScreen.js';
-    import { MainScreen } from './MainScreen.js';
-    import { UIScene } from './UI.js';
-    import { GameOverScreen } from './GameOverScreen.js';
-    import { GameClearScreen } from './GameClearScreen.js';
+    import { AssetLoaderScene } from './AssetLoaderScene.js';
+    import { TitleScreen } from './js/TitleScreen.js';
+    import { MainScreen } from './js/MainScreen.js';
+    import { UIScene } from './js/UI.js';
+    import { GameOverScreen } from './js/GameOverScreen.js';
+    import { GameClearScreen } from './js/GameClearScreen.js';
 
     const config = {
         type: Phaser.AUTO,
         width: window.innerWidth,
         height: window.innerHeight,
         backgroundColor: '#000000',
-        scene: [TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
+        scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
     };
 
     const game = new Phaser.Game(config);
