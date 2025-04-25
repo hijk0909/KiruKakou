@@ -3,38 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <title>KiruKakou</title>
+    <!-- モバイルブラウザUI対策のためのviewport設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, minimal-ui, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
+            width: 100%;
             overflow: hidden;
             background-color: #000;
+            position: fixed; /* 余計なスクロールを防止 */
         }
-
+        
         #game-container {
             width: 100%;
-            height: 100%; /* PCのスクリーンサイズに合わせる */
+            height: 100%; 
             display: flex;
             justify-content: center;
             align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* SafariのUI領域を考慮したパディング */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
-
-        /* スマホ（特にiOS）の場合だけ、ゲーム画面がUIバーを隠せるように調整 */
-        @media (max-width: 768px) { /* 画面幅が768px以下のデバイスに適用 */
+        
+        /* iOS向けの特別対応 */
+        @supports (-webkit-touch-callout: none) {
             #game-container {
-                height: 200%; /* iOS SafariでUIバーを隠すため */
+                height: -webkit-fill-available;
             }
         }
-
+        
         canvas {
             display: block;
+            margin: 0 auto; /* センタリングを強制 */
+            /* キャンバスの変形の基準点を中央に設定 */
+            transform-origin: center center;
+        }
+        
+        /* ホームスクリーン追加用のアイコンとスプラッシュスクリーン */
+        @media (orientation: portrait) {
+            /* 縦向き時のスタイル */
+            body::after {
+                content: "";
+                display: block;
+                height: 1px; /* スクロール用の小さなスペース */
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div id="game-container"></div>
-
     <script type="module">
         import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
         import { AssetLoaderScene } from './AssetLoaderScene.js';
@@ -43,10 +69,11 @@
         import { UIScene } from './js/UI.js';
         import { GameOverScreen } from './js/GameOverScreen.js';
         import { GameClearScreen } from './js/GameClearScreen.js';
-
+        
         const GAME_WIDTH = 800;
         const GAME_HEIGHT = 600;
-
+        
+        // 改良されたスケール設定
         const config = {
             type: Phaser.AUTO,
             scale: {
@@ -59,23 +86,71 @@
             backgroundColor: '#000000',
             scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
         };
-
+        
         const game = new Phaser.Game(config);
-
-        // ↓↓↓ iOS Safari の上下バーを隠すためのスクロール処理 ↓↓↓
-        function hideBrowserUI() {
-            window.scrollTo(0, 1);
+        
+        // iOS Safariの上下バーを隠すための改良された関数
+        function hideIOSBrowserUI() {
+            // フルスクリーンAPIを試みる
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(e => console.log("フルスクリーン化に失敗:", e));
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen().catch(e => console.log("フルスクリーン化に失敗:", e));
+            }
+            
+            // 複数のテクニックを組み合わせてスクロール
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+                // iOS 15以降対応
+                if ("standalone" in window.navigator && !window.navigator.standalone) {
+                    document.body.style.height = window.innerHeight + 'px';
+                }
+                
+                // 微小なスクロールを発生させる
+                window.scrollBy(0, 1);
+                setTimeout(() => window.scrollTo(0, 0), 50);
+            }, 300);
+        }
+        
+        // センタリング修正のためのリサイズハンドラ
+        function handleResize() {
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                // キャンバスの位置を再計算
+                const container = document.getElementById('game-container');
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
+                
+                // 必要に応じてゲームサイズを更新
+                if (game.scale) {
+                    game.scale.refresh();
+                }
+            }
         }
 
-        // ページロード後に一度実行
+        // イベントリスナー
         window.addEventListener('load', () => {
-            setTimeout(hideBrowserUI, 100); // Safariは読み込み後少し待つと効果が出やすい
+            hideIOSBrowserUI();
+            handleResize();
         });
-
-        // 画面の向きが変わったときにも再実行
+        
+        window.addEventListener('resize', () => {
+            setTimeout(handleResize, 100);
+        });
+        
         window.addEventListener('orientationchange', () => {
-            setTimeout(hideBrowserUI, 500);
+            setTimeout(() => {
+                hideIOSBrowserUI();
+                handleResize();
+            }, 500);
         });
+        
+        // iOS 13以降のScroll to Refreshを無効化
+        document.body.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
