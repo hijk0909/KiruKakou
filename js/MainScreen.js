@@ -60,6 +60,8 @@ export class MainScreen extends Phaser.Scene {
         this.input.on('pointerup', this.onPointerUp, this);
 
         const canvas = this.game.canvas;
+        canvas.removeEventListener("mouseleave", this.handleMouseLeave);
+        canvas.removeEventListener("touchcancel", this.handleTouchCancel);
         this.handleMouseLeave = () => {
           this.confirmPath();
         };
@@ -122,12 +124,12 @@ export class MainScreen extends Phaser.Scene {
     }
 
     onPointerUp(pointer){
-        console.log(`PointerUp`);
+        // console.log(`PointerUp`);
         this.confirmPath();
     }
 
     confirmPath(){
-        console.log(`confirmPath pathState: ${this.pathState} gameState: ${this.gameState}`);
+        // console.log(`confirmPath pathState: ${this.pathState} gameState: ${this.gameState}`);
         if ( this.pathState != PATH_STATE_MAKING || this.gameState != GAME_STATE_PLAY){
             return;
         }
@@ -310,9 +312,9 @@ export class MainScreen extends Phaser.Scene {
             if ( !this.jingle.isPlaying){
                if (GameState.stage > GameState.maxStage) {
                     this.scene.stop('UIScene');
-                   this.scene.start('GameClearScreen');
+                    this.scene.start('GameClearScreen');
                  } else {
-                     this.scene.restart(); // 次ステージでプレイ継続
+                    this.scene.restart(); // 次ステージでプレイ継続
                 }
             }
         } else if (this.gameState === GAME_STATE_FAILED){
@@ -327,13 +329,15 @@ export class MainScreen extends Phaser.Scene {
         }
     } // End of update()
 
-    destory(){
+    destroy(){
+        console.log(`destroy`);
         const canvas = this.game.canvas;
-        canvas.removeEventListener("mouseleave", this.mouseLeaveHandler);
-        canvas.removeEventListener("touchcancel", this.touchCancelHandler);
+        if (canvas) {
+            canvas.removeEventListener("mouseleave", this.handleMouseLeave);
+            canvas.removeEventListener("touchcancel", this.handleTouchCancel);
+        }
         super.destroy();
     }
-
 
     // キャラクターの生成処理
     spawn_character() {

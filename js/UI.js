@@ -10,25 +10,32 @@ export class UIScene extends Phaser.Scene {
     }
 
     create() {
-        const style = { font: '16px Arial', fill: '#ffffff' };
+   
+        const cw = this.game.canvas.width;
+        const ch = this.game.canvas.height;
+        const cx = this.game.canvas.width / 2;
+        const cy = this.game.canvas.height / 2;
+  
+        const style1 = { font: '16px Arial', fill: '#ffffff' };
+        const rx = cw - 160;
+        this.intersectionsText = this.add.text(rx, 30, '交差数：0', style1);
+        this.pathLengthText    = this.add.text(rx, 50, '軌跡の長さ：0', style1);
+        this.loopAreaText      = this.add.text(rx, 70, '囲みの面積：0', style1);
 
-        const x = this.game.canvas.width - 220
-        this.intersectionsText = this.add.text(x, 30, '交差数：0', style);
-        this.pathLengthText    = this.add.text(x, 50, '軌跡の長さ：0', style);
-        this.loopAreaText      = this.add.text(x, 70, '囲みの面積：0', style);
+        const style2 = { font: '24px Arial', fill: '#ffffff', shadow: {offsetX : 2, offsetY: 2, color : '#0ee', blur:0, fill: true, stroke: false }};
+        this.scoreText         = this.add.text(10, 30, 'SCORE：0', style2);
+        this.energyText        = this.add.text(10, 60, 'MANA：0', style2);
+        this.stageText         = this.add.text(10, ch-10, 'STAGE：0', style2).setOrigin(0,1);
+        this.livesText         = this.add.text(cw - 10, ch-10, 'LIVES：0', style2).setOrigin(1,1);
 
-        this.scoreText         = this.add.text(10, 30, 'SCORE：0', style);
-        this.energyText        = this.add.text(10, 50, 'MANA：0', style);
-        this.stageText         = this.add.text(10, 70, 'STAGE：0', style);
-        this.livesText         = this.add.text(10, 90, 'LIVES：0', style);
-
-        const style2 = { font: '32px Arial', fill: '#ffffff' };
-        this.stageBeginText    = this.add.text(100,100, 'ROUND START', style2);
+        const style3 = { font: '48px Arial', fill: '#ffff00', stroke: '#ff0000', strokeThickness: 2};
+        this.stageBeginText    = this.add.text(cx,cy, 'ROUND START', style3).setOrigin(0.5, 0.5);
         this.stageBeginText.setVisible(true);
-        this.stageClearText    = this.add.text(100,120, 'ROUND CLEAR', style2);
+        this.stageClearText    = this.add.text(cx,cy, 'ROUND CLEAR', style3).setOrigin(0.5, 0.5);
         this.stageClearText.setVisible(false);
-        this.stageFailedText   = this.add.text(100,140, 'FAILED',style2);
+        this.stageFailedText   = this.add.text(cx,cy, 'FAILED',style3).setOrigin(0.5,0.5);
         this.stageFailedText.setVisible(false);
+
         this.uiGraphics = this.add.graphics(); 
         this.uiSparkGraphics = this.add.graphics();
     }
@@ -53,11 +60,11 @@ export class UIScene extends Phaser.Scene {
 
     setPathLength(val) {
         this.pathLength = val;
-        this.pathLengthText.setText(`軌跡の長さ：${val.toFixed(1)}`);
+        this.pathLengthText.setText(`軌跡の長さ：${Math.round(val)}`);
     }
 
     setLoopArea(val) {
         this.loopArea = val;
-        this.loopAreaText.setText(`囲みの面積：${val.toFixed(1)}`);
+        this.loopAreaText.setText(`囲みの面積：${Math.round(val)}`);
     }
 }
