@@ -3,56 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>KiruKakou</title>
-    <!-- iOS Safari フルスクリーン対応のためのメタタグ -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         html, body {
             margin: 0;
             padding: 0;
-            width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
-            /* iOS Safariでのバウンス効果を無効化 */
-            position: fixed;
-            touch-action: manipulation;
+            background-color:#000;
         }
-
         #game-container {
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            /* iOS Safariでのセーフエリア対応 */
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
-
-        canvas {
-            display: block;
-            /* iOS Safariでのセンタリング問題対応 */
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            /* 必要に応じてmax-widthとmax-heightを設定 */
-            max-width: 100%;
-            max-height: 100%;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
         }
-
-        /* iOS Safariの検出用スタイル */
-        [data-browser="ios-safari"] #game-container {
-            /* iOS Safariでのセンタリング調整 */
-            transform: translateY(0);
+        @media (max-width: 768px) {
+            html, body {
+                overflow: visible;
+            }
+            #game-container {
+                height: 110%;
+            }
         }
     </style>
 </head>
 <body>
     <div id="game-container"></div>
-
     <script type="module">
         import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
         import { AssetLoaderScene } from './AssetLoaderScene.js';
@@ -61,25 +40,8 @@
         import { UIScene } from './js/UI.js';
         import { GameOverScreen } from './js/GameOverScreen.js';
         import { GameClearScreen } from './js/GameClearScreen.js';
-
         const GAME_WIDTH = 800;
         const GAME_HEIGHT = 600;
-
-        // iOS Safariの検出
-        function detectIOSSafari() {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            
-            if (isIOS && isSafari) {
-                document.documentElement.setAttribute('data-browser', 'ios-safari');
-                return true;
-            }
-            return false;
-        }
-
-        // iOS Safariの場合の特別な処理
-        const isIOSSafari = detectIOSSafari();
-
         const config = {
             type: Phaser.AUTO,
             scale: {
@@ -92,61 +54,7 @@
             backgroundColor: '#000000',
             scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
         };
-
         const game = new Phaser.Game(config);
-
-        // iOS Safariの場合のフルスクリーン対応
-        if (isIOSSafari) {
-            // PWAとして起動した場合のフルスクリーン対応
-            if (window.navigator.standalone) {
-                // すでにフルスクリーンモードなので追加の処理は不要
-            } else {
-                // ブラウザからの通常アクセスの場合
-                setupIOSSafariFullscreen();
-            }
-        }
-
-        // iOS Safariのフルスクリーン対応関数
-        function setupIOSSafariFullscreen() {
-            // スクロールを防止
-            document.addEventListener('touchmove', function(e) {
-                if (e.touches.length > 1) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            // 画面の向きが変わったときの処理
-            window.addEventListener('orientationchange', function() {
-                setTimeout(function() {
-                    // スクロールを一番上に戻す
-                    window.scrollTo(0, 0);
-                    // ビューポートの高さを再設定
-                    document.documentElement.style.height = window.innerHeight + 'px';
-                }, 300);
-            });
-
-            // ページロード時とリサイズ時の処理
-            function resizeHandler() {
-                // ビューポートの高さを設定
-                document.documentElement.style.height = window.innerHeight + 'px';
-                // スクロールを一番上に戻す
-                window.scrollTo(0, 0);
-            }
-
-            window.addEventListener('load', resizeHandler);
-            window.addEventListener('resize', resizeHandler);
-
-            // 初回実行
-            setTimeout(resizeHandler, 300);
-        }
-
-        // ゲームのリサイズ処理を改善
-        window.addEventListener('resize', function() {
-            if (game.scale) {
-                // ゲームのスケールを更新
-                game.scale.refresh();
-            }
-        });
     </script>
 </body>
 </html>
