@@ -20,10 +20,17 @@
     import { GameOverScreen } from './js/GameOverScreen.js';
     import { GameClearScreen } from './js/GameClearScreen.js';
 
+    const GAME_WIDTH = 800;
+    const GAME_HEIGHT = 600;
+
     const config = {
         type: Phaser.AUTO,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+            width: GAME_WIDTH,
+            height: GAME_HEIGHT,
+        },
         backgroundColor: '#000000',
         scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
     };

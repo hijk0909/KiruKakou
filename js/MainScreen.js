@@ -59,6 +59,16 @@ export class MainScreen extends Phaser.Scene {
         this.input.on('pointermove', this.onPointerMove, this);
         this.input.on('pointerup', this.onPointerUp, this);
 
+        const canvas = this.game.canvas;
+        this.handleMouseLeave = () => {
+          this.confirmPath();
+        };
+        canvas.addEventListener("mouseleave", this.handleMouseLeave);
+        this.handleTouchCancel = () =>{
+            this.confirmPath();            
+        }
+        canvas.addEventListener("touchcancel", this.handleTouchCancel);
+
         this.scene.launch('UIScene');
         this.ui = this.scene.get('UIScene');
 
@@ -112,16 +122,21 @@ export class MainScreen extends Phaser.Scene {
     }
 
     onPointerUp(pointer){
-        // console.log(`PointerUp`);
+        console.log(`PointerUp`);
+        this.confirmPath();
+    }
+
+    confirmPath(){
+        console.log(`confirmPath pathState: ${this.pathState} gameState: ${this.gameState}`);
         if ( this.pathState != PATH_STATE_MAKING || this.gameState != GAME_STATE_PLAY){
             return;
         }
-
+    
         // 交差の検出
         const is1 = findSelfIntersections(this.pathPoints);
         this.intersections = mergeCloseIntersections(is1, 5);
         const intersections = this.intersections
-
+    
         if (intersections.length === 1) {
         // 交差数１（囲み成立）
             this.pathState = PATH_STATE_ENCIRCLE;
@@ -172,11 +187,11 @@ export class MainScreen extends Phaser.Scene {
                 this.effects.push(eff);
             }
         }
-
+    
         this.ui.setIntersections(this.intersections.length);
         this.ui.setLoopArea(this.loopArea);
         this.ui.setPathLength(this.pathLength);
-    } // End of onPointerUp()
+    } // End of confirmPath()
 
     update(time, delta) {
         if (this.gameState === GAME_STATE_BEGIN){
@@ -310,9 +325,15 @@ export class MainScreen extends Phaser.Scene {
                 }
             }
         }
-
-
     } // End of update()
+
+    destory(){
+        const canvas = this.game.canvas;
+        canvas.removeEventListener("mouseleave", this.mouseLeaveHandler);
+        canvas.removeEventListener("touchcancel", this.touchCancelHandler);
+        super.destroy();
+    }
+
 
     // キャラクターの生成処理
     spawn_character() {

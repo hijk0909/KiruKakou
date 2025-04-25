@@ -112,6 +112,7 @@ export class Effect {
                 GameState.energy = Math.min( GameState.energy + 5, GameState.maxEnergy);
                 this.scene.sound.play('se_mana_up');
                 // this.alive = false;
+                // 自分自身を EFF_TYPE_SPARK（パーティクル）に変更
                 this.setType(EFF_TYPE_SPARK, this.pos);
             }
         } else if (this.type === EFF_TYPE_KILL){
