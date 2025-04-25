@@ -4,38 +4,78 @@
     <meta charset="UTF-8">
     <title>KiruKakou</title>
     <style>
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
+            height: 100%;
             overflow: hidden;
+            background-color: #000;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%; /* PCのスクリーンサイズに合わせる */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* スマホ（特にiOS）の場合だけ、ゲーム画面がUIバーを隠せるように調整 */
+        @media (max-width: 768px) { /* 画面幅が768px以下のデバイスに適用 */
+            #game-container {
+                height: 200%; /* iOS SafariでUIバーを隠すため */
+            }
+        }
+
+        canvas {
+            display: block;
         }
     </style>
 </head>
 <body>
-<script type="module">
-    import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
-    import { AssetLoaderScene } from './AssetLoaderScene.js';
-    import { TitleScreen } from './js/TitleScreen.js';
-    import { MainScreen } from './js/MainScreen.js';
-    import { UIScene } from './js/UI.js';
-    import { GameOverScreen } from './js/GameOverScreen.js';
-    import { GameClearScreen } from './js/GameClearScreen.js';
+    <div id="game-container"></div>
 
-    const GAME_WIDTH = 800;
-    const GAME_HEIGHT = 600;
+    <script type="module">
+        import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
+        import { AssetLoaderScene } from './AssetLoaderScene.js';
+        import { TitleScreen } from './js/TitleScreen.js';
+        import { MainScreen } from './js/MainScreen.js';
+        import { UIScene } from './js/UI.js';
+        import { GameOverScreen } from './js/GameOverScreen.js';
+        import { GameClearScreen } from './js/GameClearScreen.js';
 
-    const config = {
-        type: Phaser.AUTO,
-        scale: {
-            mode: Phaser.Scale.FIT,
-            autoCenter: Phaser.Scale.CENTER_BOTH,
-            width: GAME_WIDTH,
-            height: GAME_HEIGHT,
-        },
-        backgroundColor: '#000000',
-        scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
-    };
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
 
-    const game = new Phaser.Game(config);
-</script>
+        const config = {
+            type: Phaser.AUTO,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: GAME_WIDTH,
+                height: GAME_HEIGHT,
+                parent: 'game-container',
+            },
+            backgroundColor: '#000000',
+            scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
+        };
+
+        const game = new Phaser.Game(config);
+
+        // ↓↓↓ iOS Safari の上下バーを隠すためのスクロール処理 ↓↓↓
+        function hideBrowserUI() {
+            window.scrollTo(0, 1);
+        }
+
+        // ページロード後に一度実行
+        window.addEventListener('load', () => {
+            setTimeout(hideBrowserUI, 100); // Safariは読み込み後少し待つと効果が出やすい
+        });
+
+        // 画面の向きが変わったときにも再実行
+        window.addEventListener('orientationchange', () => {
+            setTimeout(hideBrowserUI, 500);
+        });
+    </script>
 </body>
 </html>
