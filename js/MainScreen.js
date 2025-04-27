@@ -22,6 +22,7 @@ const GAME_STATE_PLAY =1;
 const GAME_STATE_CLEAR =3;
 const GAME_STATE_FAILED =4;
 
+const INTERSEC_MERGE_THRESHOLD =10;
 const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
 const ENEMY_SCORE = 100;
@@ -169,7 +170,7 @@ export class MainScreen extends Phaser.Scene {
     
         // 交差数、長さ、囲み面積の計算
         const is1 = findSelfIntersections(this.pathPoints);
-        this.intersections = mergeCloseIntersections(is1, 5);
+        this.intersections = mergeCloseIntersections(is1, INTERSEC_MERGE_THRESHOLD);
         const intersections = this.intersections
         this.pathLength = polylineLength(this.pathPoints);
         if (intersections.length === 1){
