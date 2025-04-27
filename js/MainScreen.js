@@ -1,8 +1,13 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
 import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE, EFF_TYPE_CROSS } from './Effect.js';
-// import { UIScene } from './UI.js';
 import { GameState } from './GameState.js';
+// import { UIScene } from './UI.js';
+
+const GAME_STATE_BEGIN =0;
+const GAME_STATE_PLAY =1;
+const GAME_STATE_CLEAR =3;
+const GAME_STATE_FAILED =4;
 
 const PATH_STATE_NONE = 0;
 const PATH_STATE_MAKING =1;
@@ -16,13 +21,9 @@ const PATH_COUNTER_FAILED = 60;
 
 const PATH_MIN_LENGTH =30;
 const PATH_MIN_LOOPAREA = 200;
+const INTERSEC_MERGE_THRESHOLD =5;
+const AREA_THRESHOLD = 10;
 
-const GAME_STATE_BEGIN =0;
-const GAME_STATE_PLAY =1;
-const GAME_STATE_CLEAR =3;
-const GAME_STATE_FAILED =4;
-
-const INTERSEC_MERGE_THRESHOLD =10;
 const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
 const ENEMY_SCORE = 100;
@@ -141,6 +142,7 @@ export class MainScreen extends Phaser.Scene {
         this.pathPoints = [pointer.position.clone()];
             this.pathGraphics.clear();
             this.areaGraphics.clear();
+            this.ui.clearNG();
             this.pathGraphics.lineStyle(2, 0xff0000, 0.5);
             this.pathState = PATH_STATE_MAKING;
             this.pathCounter = -1;
@@ -168,6 +170,8 @@ export class MainScreen extends Phaser.Scene {
             return;
         }
     
+        let path_mode = 0;
+
         // 交差数、長さ、囲み面積の計算
         const is1 = findSelfIntersections(this.pathPoints);
         this.intersections = mergeCloseIntersections(is1, INTERSEC_MERGE_THRESHOLD);
@@ -179,10 +183,14 @@ export class MainScreen extends Phaser.Scene {
             // console.log(`loopArea: ${this.loopArea}`)
         }
     
-        if (intersections.length === 1 && this.loopArea > PATH_MIN_LOOPAREA) {
-        // 交差数１（囲み成立）
+        if (intersections.length === 0 && this.pathLength > PATH_MIN_LENGTH) {
+            // 交差数０（攻撃成立）
+            this.confirmHit();
+            this.loopArea = 0
+            path_mode = 0;
+        } else if (intersections.length === 1 && this.loopArea > PATH_MIN_LOOPAREA) {
+            // 交差数１（囲み成立）
             this.pathState = PATH_STATE_ENCIRCLE;
-            // this.pathLength = 0
             this.pathGraphics.lineStyle(4, 0x00ff00, 1.0);
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.areaGraphics.fillStyle(0x00ff80, 0.8);
@@ -196,24 +204,15 @@ export class MainScreen extends Phaser.Scene {
             this.pathCounter = PATH_COUNTER_ENCIRCLE;
             GameState.energyMultiple = 0;
             this.sound.play('se_path_encircle');
-        } else if (intersections.length === 0 && this.pathLength > PATH_MIN_LENGTH) {
-        // 交差数０（攻撃成立）
-            this.pathState = PATH_STATE_HIT;
-            this.loop = null
-            this.loopArea = 0
-            this.pathGraphics.lineStyle(20, 0xffee00, 0.5);
-            this.pathGraphics.strokePoints(this.pathPoints, false);
-            this.pathGraphics.lineStyle(10, 0xffee00, 1.0);
-            this.pathGraphics.strokePoints(this.pathPoints, false);
-            this.pathCounter = PATH_COUNTER_HIT;
-            this.scoreMultiple = 1;
-            this.sound.play('se_path_attack');
+            path_mode = 1;
+        } else if (intersections.length === 1 && this.loopArea < AREA_THRESHOLD){
+            // 交差数１（囲み不成立、攻撃成立）
+            this.confirmHit();
+            path_mode = 0;
         } else {
         // 交差数２以上 または 長さ・面積 不十分（軌跡の発効は不成立）
             this.pathState = PATH_STATE_FAILED;
             this.loop = null
-            this.loopArea = 0
-            this.pathLength = 0
             this.pathGraphics.lineStyle(4, 0x808080, 0.5);
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.pathCounter = PATH_COUNTER_FAILED;
@@ -228,12 +227,39 @@ export class MainScreen extends Phaser.Scene {
                     this.effects.push(eff);
                 }
             }
+            path_mode = 2;
         }
-    
+
+        // 不成立理由の表示
+        if (path_mode === 2){
+            if (intersections.length > 1){
+                this.ui.setIntersectionNG();
+                this.loopArea = 0;
+            } else if (intersections.length === 1 && this.loopArea <= PATH_MIN_LOOPAREA){
+                this.ui.setLoopAreaNG();
+            } else if (intersections.length === 0 && this.pathLength <= PATH_MIN_LENGTH){
+                this.ui.setPathLengthNG();
+                this.loopArea = 0;
+            }
+        }
+
         this.ui.setIntersections(this.intersections.length);
         this.ui.setLoopArea(this.loopArea);
         this.ui.setPathLength(this.pathLength);
     } // End of confirmPath()
+
+    confirmHit(){
+        // 攻撃処理
+        this.pathState = PATH_STATE_HIT;
+        this.loop = null
+        this.pathGraphics.lineStyle(20, 0xffee00, 0.5);
+        this.pathGraphics.strokePoints(this.pathPoints, false);
+        this.pathGraphics.lineStyle(10, 0xffee00, 1.0);
+        this.pathGraphics.strokePoints(this.pathPoints, false);
+        this.pathCounter = PATH_COUNTER_HIT;
+        this.scoreMultiple = 1;
+        this.sound.play('se_path_attack');
+    }
 
     update(time, delta) {
         if (this.gameState === GAME_STATE_BEGIN){
@@ -246,6 +272,8 @@ export class MainScreen extends Phaser.Scene {
                 this.bgm.play();
                 this.bgm.setVolume(0.5);
             }
+            // 背景の再描画
+            this.redraw_bg(this.season, delta);
         } else if (this.gameState === GAME_STATE_PLAY){
 
             // 【GAME_STATE】プレイ中
@@ -345,6 +373,7 @@ export class MainScreen extends Phaser.Scene {
                 if ( this.pathCounter === 0 && this.pathState != PATH_STATE_MAKING){
                     this.pathGraphics.clear();
                     this.areaGraphics.clear();
+                    this.ui.clearNG();
                     this.pathState = PATH_STATE_NONE;
                 }
             }
@@ -380,6 +409,8 @@ export class MainScreen extends Phaser.Scene {
             }
             // エフェクトの再描画
             this.redraw_eff();
+            // 背景の再描画
+            this.redraw_bg(this.season, delta);
 
             if ( GameState.timer > 1){
                 GameState.timer -= 1; //残タイムボーナス
@@ -550,7 +581,7 @@ function extractLoop(points, i1, i2, intersection) {
     return loop;
 }
 
-function mergeCloseIntersections(intersections, threshold = 5) {
+function mergeCloseIntersections(intersections, threshold) {
     const merged = [];
     for (const inter of intersections) {
         // console.log(`all:inter.rx:${inter.point.x} inter.ry:${inter.point.y}`);

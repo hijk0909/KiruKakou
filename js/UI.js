@@ -18,9 +18,17 @@ export class UIScene extends Phaser.Scene {
   
         const style1 = { font: '16px Arial', fill: '#ffffff' };
         const rx = cw - 160;
-        this.intersectionsText = this.add.text(rx, 30, '交差数：0', style1);
-        this.pathLengthText    = this.add.text(rx, 50, '軌跡の長さ：0', style1);
-        this.loopAreaText      = this.add.text(rx, 70, '囲みの面積：0', style1);
+        this.intersectionsText = this.add.text(rx, 40, '交差数：0', style1).setOrigin(0,0.5);
+        this.pathLengthText    = this.add.text(rx, 60, '軌跡の長さ：0', style1).setOrigin(0,0.5);
+        this.loopAreaText      = this.add.text(rx, 80, '囲みの面積：0', style1).setOrigin(0,0.5);
+
+        const style4 = { font: '32px Arial', fill: '#ff0000' };
+        this.intersectionNG = this.add.text(rx-18,40,'×',style4).setOrigin(0,0.5);
+        this.intersectionNG.setVisible(false);
+        this.pathLengthNG = this.add.text(rx-18,60,'×',style4).setOrigin(0,0.5);
+        this.pathLengthNG.setVisible(false);
+        this.loopAreaNG = this.add.text(rx-18,80,'×',style4).setOrigin(0,0.5);
+        this.loopAreaNG.setVisible(false);
 
         const style2 = { font: '24px Arial', fill: '#ffffff', shadow: {offsetX : 2, offsetY: 2, color : '#0ee', blur:0, fill: true, stroke: false }};
         this.scoreText         = this.add.text(10, 30, 'SCORE：0', style2);
@@ -69,4 +77,23 @@ export class UIScene extends Phaser.Scene {
         this.loopArea = val;
         this.loopAreaText.setText(`囲みの面積：${Math.round(val)}`);
     }
+
+    setIntersectionNG(){
+        this.intersectionNG.setVisible(true);
+    }
+
+    setPathLengthNG(){
+        this.pathLengthNG.setVisible(true);
+    }
+
+    setLoopAreaNG(){
+        this.loopAreaNG.setVisible(true);
+    }
+
+    clearNG(){
+        this.intersectionNG.setVisible(false);
+        this.pathLengthNG.setVisible(false);
+        this.loopAreaNG.setVisible(false);
+    }
+
 }
