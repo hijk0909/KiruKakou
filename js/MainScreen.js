@@ -176,7 +176,7 @@ export class MainScreen extends Phaser.Scene {
         if (intersections.length === 1){
             this.loop = extractLoop(this.pathPoints, intersections[0].i1, intersections[0].i2, intersections[0].point);
             this.loopArea = Math.abs(polygonArea(this.loop));
-            console.log(`loopArea: ${this.loopArea}`)
+            // console.log(`loopArea: ${this.loopArea}`)
         }
     
         if (intersections.length === 1 && this.loopArea > PATH_MIN_LOOPAREA) {
@@ -351,6 +351,8 @@ export class MainScreen extends Phaser.Scene {
 
             // キャラクターの再描画
             this.redraw_ch();
+            // エフェクトの再描画
+            this.redraw_eff();
             // 背景の再描画
             this.redraw_bg(this.season, delta);
 
@@ -367,6 +369,18 @@ export class MainScreen extends Phaser.Scene {
         } else if (this.gameState === GAME_STATE_CLEAR){
 
             // 【GAME_STATE】ステージクリア
+
+            // エフェクトの処理（逆順で）
+            for (let i = this.effects.length - 1; i >= 0; i--) {
+                const eff = this.effects[i];
+                eff.move();
+                if (!eff.isAlive()) {
+                    this.effects.splice(i, 1);
+                }
+            }
+            // エフェクトの再描画
+            this.redraw_eff();
+
             if ( GameState.timer > 1){
                 GameState.timer -= 1; //残タイムボーナス
                 this.add_score(TIMER_SCORE_RATIO);
@@ -442,6 +456,10 @@ export class MainScreen extends Phaser.Scene {
         for (const ch of this.characters) {
             ch.draw(this.charGraphics);
         }
+    }
+
+    // エフェクトの再描画
+    redraw_eff(){
         this.effGraphics.clear();
         for (const eff of this.effects) {
             eff.draw(this.effGraphics);
