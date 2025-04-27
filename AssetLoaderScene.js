@@ -34,6 +34,7 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.audio('se_path_fail', './assets/audio/se/SE_PATH_FAIL.mp3')
         this.load.audio('se_path_start', './assets/audio/se/SE_PATH_START.mp3')
         this.load.audio('se_tap', './assets/audio/se/SE_TAP.mp3')
+        this.load.audio('se_extend', './assets/audio/se/SE_EXTEND.mp3')
 
         this.load.audio('j_round_start', './assets/audio/jingle/J_ROUND_START.mp3')
         this.load.audio('j_round_failed', './assets/audio/jingle/J_ROUND_FAILED.mp3')
@@ -52,6 +53,16 @@ export class AssetLoaderScene extends Phaser.Scene {
 
 
         this.load.image('bg_spring', 'assets/images/backgrounds/spring_tile.png');
+        this.load.spritesheet('bg_summer', 'assets/images/backgrounds/summer_tile.png', {
+            frameWidth: 16,  frameHeight: 16  });
+        this.load.image('bg_autumn', 'assets/images/backgrounds/autumn_tile.png');
+        this.load.image('bg_winter', 'assets/images/backgrounds/winter_tile.png');
+
+        this.load.image('btn_left', 'assets/images/buttons/btn_left.png');
+        this.load.image('btn_right', 'assets/images/buttons/btn_right.png');
+        this.load.image('btn_play', 'assets/images/buttons/btn_play.png');
+
+        this.load.json('stage_data', 'assets/data/stage.json');
     }
 
     create() {

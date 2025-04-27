@@ -24,7 +24,8 @@ export class UIScene extends Phaser.Scene {
 
         const style2 = { font: '24px Arial', fill: '#ffffff', shadow: {offsetX : 2, offsetY: 2, color : '#0ee', blur:0, fill: true, stroke: false }};
         this.scoreText         = this.add.text(10, 30, 'SCORE：0', style2);
-        this.energyText        = this.add.text(10, 60, 'MANA：0', style2);
+        this.energyText        = this.add.text(cx, 30, 'MANA：0 / 0', style2).setOrigin(0.5,0);
+        this.timerText         = this.add.text(10, ch-40, 'TIMER：0', style2).setOrigin(0,1);
         this.stageText         = this.add.text(10, ch-10, 'STAGE：0', style2).setOrigin(0,1);
         this.livesText         = this.add.text(cw - 10, ch-10, 'LIVES：0', style2).setOrigin(1,1);
 
@@ -43,7 +44,8 @@ export class UIScene extends Phaser.Scene {
     update(time, delta) {
         this.score = GameState.score;
         this.scoreText.setText(`SCORE：${GameState.score}`);
-        this.energyText.setText(`MANA：${GameState.energy}`);
+        this.energyText.setText(`MANA：${GameState.energy} / ${GameState.maxEnergy}`);
+        this.timerText.setText(`TIMER：${Math.floor(GameState.timer)}`); 
         this.stageText.setText(`STAGE：${GameState.stage}`); 
         this.livesText.setText(`LIVES：${GameState.lives}`);    
 

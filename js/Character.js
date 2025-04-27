@@ -8,7 +8,10 @@ export const REACT_TYPE_ADD_SCORE = 0;
 export const REACT_TYPE_POWERUP = 1;
 export const REACT_TYPE_PENALTY = 2;
 
+const SHADOW_OFFSET = 40;
+
 export class Character {
+
     constructor(scene) {
         this.scene = scene;
         this.type = null;
@@ -16,14 +19,38 @@ export class Character {
         this.alive = true;
         this.collision = new Phaser.Geom.Rectangle(-20, -20, 40, 40);  // 中心からの相対矩形
         this.sprite = null;
+        this.sprite_shadow = null;
+        this.speed = 1.0;
+        this.movePattern = 0;
+        this.moveParam1 = 0;
+        this.moveParam2 = 0;
+        this.moveState = 0;
+        this.moveCounter = 0;
     }
 
     setType(type, pos) {
+        // console.log(`type: ${type}, pos: ${pos}`);
         this.type = type;
         this.pos = pos.clone(); // Phaser.Math.Vector2
         this.alive = true;
 
+        // 影の画像を作成
+        if (!this.scene.textures.exists('img_shadow')) {
+            const graphics = this.scene.make.graphics({ x: 0, y: 0, add: false });
+            const shadowWidth = 35;
+            const shadowHeight = 10;
+            const shadowWidth2 = 60;
+            const shadowHeight2 = 20;
+            graphics.fillStyle(0x000000, 0.3);
+            graphics.fillEllipse(shadowWidth2 / 2, shadowHeight2 / 2, shadowWidth, shadowHeight); 
+            graphics.fillStyle(0x000000, 0.5);
+            graphics.fillEllipse(shadowWidth2 / 2, shadowHeight2 / 2, shadowWidth2, shadowHeight2);
+            graphics.generateTexture('img_shadow', shadowWidth2, shadowHeight2);
+            graphics.destroy();
+        }
+
         if (this.type === CH_TYPE_FRIEND){
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + SHADOW_OFFSET, 'img_shadow');
             this.sprite = this.scene.add.sprite(pos.x, pos.y, 'ch_friend');
             this.sprite.setScale(1.2);
             if (!this.scene.anims.exists('ch_friend_anims')) {
@@ -34,8 +61,9 @@ export class Character {
             }
             this.sprite.play('ch_friend_anims');
         } else if (this.type == CH_TYPE_ENEMY){
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + SHADOW_OFFSET, 'img_shadow');
             this.sprite = this.scene.add.sprite(pos.x, pos.y, 'ch_enemy');
-            this.sprite.setScale(0.4);
+            this.sprite.setScale(0.38);
             if (!this.scene.anims.exists('ch_enemy_anims')) {
                 this.scene.anims.create({key:'ch_enemy_anims',
                     frames: this.scene.anims.generateFrameNumbers('ch_enemy', { start: 0, end: 3 }),
@@ -46,6 +74,22 @@ export class Character {
         }
     }
 
+    setParameter(speed, pattern, param1, param2) {
+        // console.log(`speed: ${speed}, pattern: ${pattern}, param1: ${param1}, param2: ${param2}`);
+        this.speed = speed;
+        this.movePattern = pattern;
+        this.moveParam2 = param2;
+        this.moveState = 0;
+        this.moveTimer = 0;
+
+        if (pattern === 1){
+            const sign = Phaser.Math.FloatBetween(0, 1) >= 0.5 ? 1 : -1;
+            this.moveParam1 = param1 * sign;
+        } else {
+            this.moveParam1 = param1;
+        }
+    }
+
     isAlive() {
         return this.alive;
     }
@@ -53,46 +97,94 @@ export class Character {
     setAlive(val) {
         this.alive = val;
         if (val === false && this.sprite){
-            this.sprite.destroy();
-            this.sprite = null;
+            this.destroy();
         }
     }
 
     move() {
         if (this.type === CH_TYPE_ENEMY) {
-            if (GameState.stage === 1){
-                this.pos.x += 1;
-            } else {
-                this.pos.x += 2;
-            }
+            this.move_dir(1);
             this.sprite.setPosition(this.pos.x, this.pos.y);
+            this.sprite_shadow.setPosition(this.pos.x, this.pos.y + SHADOW_OFFSET);
         } else if (this.type === CH_TYPE_FRIEND) {
-            this.pos.x -= 1;
+            this.move_dir(-1);
             this.sprite.setPosition(this.pos.x, this.pos.y);
+            this.sprite_shadow.setPosition(this.pos.x, this.pos.y + SHADOW_OFFSET);
         }
 
         const { width, height } = this.scene.game.canvas;
         if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
             this.alive = false;
-            if ( this.sprite ){
-                this.sprite.destroy();
-                this.sprite = null;
+                this.destroy();
+        }
+    }
+
+    move_dir(dx){
+        if (this.movePattern === 0){
+            // move straight
+            this.pos.x = this.pos.x + this.speed * dx;
+        } else if (this.movePattern === 1){
+            // move diagonal
+            const h = this.scene.game.canvas.height;
+            const vm = GameState.verticalMargin;
+            this.pos.x = this.pos.x + this.speed * dx;
+            this.pos.y += this.moveParam1;
+            if (this.pos.y > h -vm || this.pos.y < vm){
+                this.moveParam1 *= -1; //Y軸移動方向を反転
+            }
+        } else if (this.movePattern === 2){
+            // move crawl
+            if (this.moveState === 0){
+                //加速
+                this.pos.x += this.moveCounter * dx;
+                this.moveCounter += this.moveParam1;
+                if (this.moveCounter >= this.speed){
+                    this.moveCounter = this.speed;
+                    this.moveState = 1;
+                }
+
+            } else if (this.moveState === 1){
+                //減速
+                this.pos.x += this.moveCounter * dx;
+                this.moveCounter -= this.moveParam1;
+                if (this.moveCounter <= 0){
+                    this.moveCounter = this.moveParam2;
+                    this.moveState = 2;
+                }
+            } else if (this.moveState === 2){
+                //停止
+                this.moveCounter -= 1;
+                if (this.moveCounter <= 0){
+                    this.moveCounter = 0.0;
+                    this.moveState = 0;
+                }
             }
         }
     }
 
     draw(graphics) {
-        if (this.type === CH_TYPE_ENEMY) {
-            graphics.fillStyle(0xff0000, 1);
-            graphics.beginPath();
-            graphics.moveTo(this.pos.x, this.pos.y + 20);
-            graphics.lineTo(this.pos.x - 20, this.pos.y - 20);
-            graphics.lineTo(this.pos.x + 20, this.pos.y - 20);
-            graphics.closePath();
-            graphics.fillPath();
-        } else if (this.type === CH_TYPE_FRIEND) {
+    //    if (this.type === CH_TYPE_ENEMY) {
+            // graphics.fillStyle(0xff0000, 1);
+            // graphics.beginPath();
+            // graphics.moveTo(this.pos.x, this.pos.y + 20);
+            // graphics.lineTo(this.pos.x - 20, this.pos.y - 20);
+            // graphics.lineTo(this.pos.x + 20, this.pos.y - 20);
+            // graphics.closePath();
+            // graphics.fillPath();
+    //    } else if (this.type === CH_TYPE_FRIEND) {
             // graphics.fillStyle(0x00ff00, 1);
             // graphics.fillCircle(this.pos.x, this.pos.y, 20);
+    //    }
+    }
+
+    destroy(){
+        if ( this.sprite ){
+            this.sprite.destroy();
+            this.sprite = null;
+        }
+        if ( this.sprite_shadow ){
+            this.sprite_shadow.destroy();
+            this.sprite_shadow = null;
         }
     }
 
