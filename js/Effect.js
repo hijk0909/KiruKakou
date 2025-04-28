@@ -9,12 +9,14 @@ export const EFF_TYPE_HIT = 3;
 export const EFF_TYPE_SCORE = 4;
 export const EFF_TYPE_CROSS = 5;
 export const EFF_TYPE_SPARK = 6;
+export const EFF_TYPE_MANA = 7;
 
 const EFF_PERIOD_KILL = 60;
 const EFF_PERIOD_HIT = 120;
 const EFF_PERIOD_SCORE = 80;
 const EFF_PERIOD_CROSS = 40;
 const EFF_PERIOD_SPARK = 120;
+const EFF_PERIOD_MANA = 180;
 
 export class Effect {
     constructor(scene) {
@@ -42,7 +44,7 @@ export class Effect {
             this.counter = EFF_PERIOD_CROSS;
         } else if (this.type == EFF_TYPE_SPARK){
             this.counter = EFF_PERIOD_SPARK;
-            if ( !this.scene.particles ) {
+            if ( !this.scene.starParticles ) {
                 let graphics = this.scene.add.graphics();
                 graphics.fillStyle(0xffe000, 1);
                 graphics.beginPath();
@@ -62,9 +64,9 @@ export class Effect {
                 graphics.fillPath();
                 graphics.generateTexture('star', 40, 40);
                 graphics.destroy();
-                this.scene.particles = this.scene.add.particles('star');
+                this.scene.starParticles = this.scene.add.particles('star');
             }
-            this.emitter = this.scene.particles.createEmitter({
+            this.emitter = this.scene.starParticles.createEmitter({
                 x: pos.x,
                 y: pos.y,
                 speed: { min: -200, max: 200 },
@@ -75,7 +77,40 @@ export class Effect {
                 quantity: 30 // 一度に何個放出するか
             });
             this.emitter.explode(30, pos.x, pos.y); 
-            this.emitter.setGravityY(100);
+            this.emitter.setGravityY(200);
+        } else if (this.type == EFF_TYPE_MANA){
+            this.counter = EFF_PERIOD_MANA;
+            if ( !this.scene.manaParticles ) {
+                let graphics = this.scene.add.graphics();
+                graphics.fillStyle(0x60ff00, 1);
+                graphics.beginPath();
+                let ox = 20;
+                let oy = 20;
+                graphics.moveTo(0 + ox, -20 + oy);
+                graphics.lineTo(4 + ox, -4 + oy);
+                graphics.lineTo(20 + ox, 0 + oy);
+                graphics.lineTo(4 + ox, 4 + oy);
+                graphics.lineTo(0 + ox, 20 + oy);
+                graphics.lineTo(-4 + ox, 4 + oy);
+                graphics.lineTo(-20 + ox, 0 + oy);
+                graphics.lineTo(-4 + ox, -4 + oy);
+                graphics.closePath();
+                graphics.fillPath();
+                graphics.generateTexture('mana', 40, 40);
+                graphics.destroy();
+                this.scene.manaParticles = this.scene.add.particles('mana');
+            }
+            this.emitter = this.scene.manaParticles.createEmitter({
+                x: pos.x,
+                y: pos.y,
+                speed: { min: 160, max: 200 },
+                scale: { start: 1, end: 0.5 },
+                alpha: { start: 1, end: 0 },
+                lifespan: 1000,
+                blendMode: 'ADD',
+                quantity: 60 // 一度に何個放出するか
+            });
+            this.emitter.explode(60, pos.x, pos.y); 
         }
     }
 
@@ -141,7 +176,13 @@ export class Effect {
         } else if (this.type === EFF_TYPE_SPARK) {
             this.counter -= 1;
             if ( this .counter <= 0){
-                this.scene.particles.removeEmitter(this.emitter);
+                this.scene.starParticles.removeEmitter(this.emitter);
+                this.alive = false;
+            }
+        } else if (this.type === EFF_TYPE_MANA) {
+            this.counter -= 1;
+            if ( this.counter <= 0){
+                this.scene.manaParticles.removeEmitter(this.emitter);
                 this.alive = false;
             }
         }

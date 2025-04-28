@@ -1,8 +1,7 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
-import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE, EFF_TYPE_CROSS } from './Effect.js';
+import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_SCORE, EFF_TYPE_CROSS, EFF_TYPE_MANA } from './Effect.js';
 import { GameState } from './GameState.js';
-// import { UIScene } from './UI.js';
 
 const GAME_STATE_BEGIN =0;
 const GAME_STATE_PLAY =1;
@@ -21,9 +20,9 @@ const PATH_COUNTER_FAILED = 60;
 
 const PATH_MIN_LENGTH =30;
 const PATH_MIN_LOOPAREA = 200;
-const INTERSEC_MERGE_THRESHOLD =5;
-const AREA_THRESHOLD = 10;
-const PATH_MIN_DISTANCE =10;
+const INTERSEC_MERGE_THRESHOLD =5; //近接する交差点を同一視する
+const AREA_THRESHOLD = 10;  //小さすぎるループは交差として無視する
+const PATH_MIN_DISTANCE =5; //軌跡に点を追加する時に最低限必要な距離
 
 const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
@@ -94,7 +93,8 @@ export class MainScreen extends Phaser.Scene {
         this.charGraphics = this.add.graphics(); 
         this.effGraphics = this.add.graphics(); 
 
-        this.particles = null; //初期化
+        this.starParticles = null;
+        this.manaParticles = null;
 
         // イベントリスナーの定義
         this.input.on('pointerdown', this.onPointerDown, this);
@@ -205,14 +205,25 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.areaGraphics.fillStyle(0x00ff80, 0.8);
             this.areaGraphics.beginPath();
+            // let cx = this.loop[0].x;
+            // let cy = this.loop[0].y;
+            let cx = 0;
+            let cy = 0;
             this.areaGraphics.moveTo(this.loop[0].x, this.loop[0].y);
             this.loop.forEach(point => {
                 this.areaGraphics.lineTo(point.x, point.y);
+                cx += point.x
+                cy += point.y
             });
+            cx /= this.loop.length;
+            cy /= this.loop.length;
             this.areaGraphics.closePath();
             this.areaGraphics.fillPath();
             this.pathCounter = PATH_COUNTER_ENCIRCLE;
             GameState.energyMultiple = 0;
+            let eff = new Effect(this);
+            eff.setType(EFF_TYPE_MANA, new Phaser.Math.Vector2(cx, cy));
+            this.effects.push(eff);
             this.sound.play('se_path_encircle');
             path_mode = 1;
         } else if (intersections.length === 1 && this.loopArea < AREA_THRESHOLD){
@@ -260,25 +271,8 @@ export class MainScreen extends Phaser.Scene {
 
     confirmHit(){
         // 攻撃処理
-        const thickness1 = 20;
-        const color1 = 0xffee00;
-        const alpha1 = 0.5;
-
-        const thickness2 = 10;
-        const color2 = 0xffee00;
-        const alpha2 = 0.9;
-
         this.pathState = PATH_STATE_HIT;
-        this.loop = null
-        this.pathGraphics.clear();
-        this.pathGraphics.lineStyle(thickness1, color1, alpha1);
-        this.pathGraphics.strokePoints(this.pathPoints, false);
-        this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness1 / 2 , color1, alpha1);
-        this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness1 / 2 , color1, alpha1);
-        this.pathGraphics.lineStyle(thickness2, color2, alpha2);
-        this.pathGraphics.strokePoints(this.pathPoints, false);
-        this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness2 / 2 , color2, alpha2);
-        this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness2 / 2 , color2, alpha2);
+        this.loop = null;
         this.pathCounter = PATH_COUNTER_HIT;
         this.scoreMultiple = 1;
         this.sound.play('se_path_attack');
@@ -294,6 +288,30 @@ export class MainScreen extends Phaser.Scene {
         this.pathGraphics.arc(p1.x, p1.y, radius, startAngle, endAngle);
         this.pathGraphics.closePath();
         this.pathGraphics.fillPath();
+    }
+
+    draw_hit_path(){
+        if (this.pathState === PATH_STATE_HIT){
+            this.pathGraphics.clear();
+
+            const thickness1 = 20 + 60 * ( 1 - this.pathCounter / PATH_COUNTER_HIT );
+            const color1 = 0xffee00;
+            const alpha1 = this.pathCounter / PATH_COUNTER_HIT;
+
+            this.pathGraphics.lineStyle(thickness1, color1, alpha1);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness1 / 2 , color1, alpha1);
+            this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness1 / 2 , color1, alpha1);
+
+            const thickness2 = 10;
+            const color2 = 0xffee00;
+            const alpha2 = 0.9;
+
+            this.pathGraphics.lineStyle(thickness2, color2, alpha2);
+            this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness2 / 2 , color2, alpha2);
+            this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness2 / 2 , color2, alpha2);
+        }
     }
 
     update(time, delta) {
@@ -419,6 +437,8 @@ export class MainScreen extends Phaser.Scene {
             this.redraw_eff();
             // 背景の再描画
             this.redraw_bg(this.season, delta);
+            // 攻撃時の軌跡の描画
+            this.draw_hit_path();
 
             // ステージクリアの判定
             if (GameState.energy >= GameState.maxEnergy) {
