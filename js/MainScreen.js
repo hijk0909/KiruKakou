@@ -23,6 +23,7 @@ const PATH_MIN_LENGTH =30;
 const PATH_MIN_LOOPAREA = 200;
 const INTERSEC_MERGE_THRESHOLD =5;
 const AREA_THRESHOLD = 10;
+const PATH_MIN_DISTANCE =10;
 
 const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
@@ -143,7 +144,7 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.clear();
             this.areaGraphics.clear();
             this.ui.clearNG();
-            this.pathGraphics.lineStyle(2, 0xff0000, 0.5);
+            this.pathGraphics.lineStyle(3, 0xff0000, 0.5);
             this.pathState = PATH_STATE_MAKING;
             this.pathCounter = -1;
             this.sound.play('se_path_start');
@@ -154,8 +155,17 @@ export class MainScreen extends Phaser.Scene {
             return;
         }
         if (pointer.isDown && (this.pathState === PATH_STATE_MAKING)) {
-            this.pathPoints.push(pointer.position.clone());
-            this.pathGraphics.strokePoints(this.pathPoints, false);
+            const newPoint = pointer.position.clone();
+            if (this.pathPoints.length >= 1) {
+                const lastPoint = this.pathPoints[this.pathPoints.length - 1];
+                const distance = Phaser.Math.Distance.Between(lastPoint.x, lastPoint.y, newPoint.x, newPoint.y);    
+                if (distance > PATH_MIN_DISTANCE) {
+                    // console.log(`distance: ${distance}`);
+                    this.pathPoints.push(newPoint);
+                }
+            }
+            //this.pathGraphics.strokePoints(this.pathPoints, false);
+            this.drawSmoothedPath(this.pathPoints);
         }
     }
 
@@ -250,15 +260,40 @@ export class MainScreen extends Phaser.Scene {
 
     confirmHit(){
         // 攻撃処理
+        const thickness1 = 20;
+        const color1 = 0xffee00;
+        const alpha1 = 0.5;
+
+        const thickness2 = 10;
+        const color2 = 0xffee00;
+        const alpha2 = 0.9;
+
         this.pathState = PATH_STATE_HIT;
         this.loop = null
-        this.pathGraphics.lineStyle(20, 0xffee00, 0.5);
+        this.pathGraphics.clear();
+        this.pathGraphics.lineStyle(thickness1, color1, alpha1);
         this.pathGraphics.strokePoints(this.pathPoints, false);
-        this.pathGraphics.lineStyle(10, 0xffee00, 1.0);
+        this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness1 / 2 , color1, alpha1);
+        this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness1 / 2 , color1, alpha1);
+        this.pathGraphics.lineStyle(thickness2, color2, alpha2);
         this.pathGraphics.strokePoints(this.pathPoints, false);
+        this.draw_cap(this.pathPoints[0],this.pathPoints[1], thickness2 / 2 , color2, alpha2);
+        this.draw_cap(this.pathPoints[this.pathPoints.length - 1],this.pathPoints[this.pathPoints.length - 2], thickness2 / 2 , color2, alpha2);
         this.pathCounter = PATH_COUNTER_HIT;
         this.scoreMultiple = 1;
         this.sound.play('se_path_attack');
+    }
+
+    draw_cap(p1, p2, radius, color, alpha){
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const startAngle = angle - Math.PI * 3 / 2;
+        const endAngle = startAngle + Math.PI;
+        this.pathGraphics.fillStyle(color, alpha);
+        this.pathGraphics.beginPath();
+        this.pathGraphics.moveTo(p1.x, p1.y);
+        this.pathGraphics.arc(p1.x, p1.y, radius, startAngle, endAngle);
+        this.pathGraphics.closePath();
+        this.pathGraphics.fillPath();
     }
 
     update(time, delta) {
@@ -367,7 +402,7 @@ export class MainScreen extends Phaser.Scene {
                 }
             } // End of for(eff)
 
-            // 軌跡の残存判定
+            // 軌跡を一定期間、残存させる
             if ( this.pathCounter > 0){
                 this.pathCounter -= 1;
                 if ( this.pathCounter === 0 && this.pathState != PATH_STATE_MAKING){
@@ -496,6 +531,49 @@ export class MainScreen extends Phaser.Scene {
             eff.draw(this.effGraphics);
         }
     }
+
+    // 軌跡のベジェ補完描画
+    drawSmoothedPath(points) {
+        if (points.length < 2) {
+            return;
+        }
+    
+        const graphics = this.pathGraphics;
+        graphics.clear();
+        graphics.lineStyle(3, 0xff0000);
+    
+        graphics.beginPath();
+        graphics.moveTo(points[0].x, points[0].y);
+    
+        const divisions = 10; // 1区間あたり何分割するか
+    
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1] || points[i];
+            const p3 = points[i + 2] || p2;
+    
+            for (let j = 0; j <= divisions; j++) {
+                const t = j / divisions;
+                const t2 = t * t;
+                const t3 = t2 * t;
+    
+                const x = 0.5 * ((2 * p1.x) +
+                                (-p0.x + p2.x) * t +
+                                (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+                                (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+                const y = 0.5 * ((2 * p1.y) +
+                                (-p0.y + p2.y) * t +
+                                (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+                                (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+    
+                graphics.lineTo(x, y);
+            }
+        }
+    
+        graphics.strokePath();
+    }
+
 
     // 点数の加算
     add_score(val){
