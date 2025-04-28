@@ -24,10 +24,10 @@
 
 ---
 ## 実行URL
-   https://hijk0909.github.io/KiruKakou/
+https://hijk0909.github.io/KiruKakou/
 
 ## GITHUBリポジトリURL
-　https://github.com/hijk0909/KiruKakou
+https://github.com/hijk0909/KiruKakou
 
 ---
 ## 本ゲームのソースコードのライセンス
