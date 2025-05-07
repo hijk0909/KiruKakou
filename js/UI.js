@@ -44,6 +44,8 @@ export class UIScene extends Phaser.Scene {
         this.stageClearText.setVisible(false);
         this.stageFailedText   = this.add.text(cx,cy, 'FAILED',style3).setOrigin(0.5,0.5);
         this.stageFailedText.setVisible(false);
+        this.timeOverText      = this.add.text(cx,cy, 'TIME OVER',style3).setOrigin(0.5,0.5);
+        this.timeOverText.setVisible(false);
 
         this.uiGraphics = this.add.graphics(); 
         this.uiSparkGraphics = this.add.graphics();
@@ -61,6 +63,29 @@ export class UIScene extends Phaser.Scene {
         this.uiGraphics.clear();
         this.uiGraphics.fillStyle(0xffe000, 0.5);
         this.uiGraphics.fillRect(0, 5, GameState.posEnergy, 20);
+    }
+
+    setTimerColor(ratio){
+        const red = 255;
+        const green = Math.round(255 * ratio);
+        const blue = 0; 
+        
+        const shadow_red = 128;
+        const shadow_green = Math.round(128 * ratio);
+        const shadow_blue = 0;
+
+        // RGB値を16進文字列に変換する関数
+        const toHex = (value) => {
+            const hex = value.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+
+        // "#rrggbb" 形式に変換
+        const font_color = `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+        const shadow_color = `#${toHex(shadow_red)}${toHex(shadow_green)}${toHex(shadow_blue)}`;
+
+        const style5 = { font: '24px Arial', fill: font_color, shadow: {offsetX : 2, offsetY: 2, color : shadow_color, blur:0, fill: true, stroke: false }};
+        this.timerText.setStyle(style5);
     }
 
     setIntersections(val) {

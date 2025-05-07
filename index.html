@@ -35,28 +35,32 @@
 <body>
     <div id="game-container"></div>
     <script type="module">
-        import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm';
-        import { AssetLoaderScene } from './AssetLoaderScene.js';
-        import { TitleScreen } from './js/TitleScreen.js';
-        import { MainScreen } from './js/MainScreen.js';
-        import { UIScene } from './js/UI.js';
-        import { GameOverScreen } from './js/GameOverScreen.js';
-        import { GameClearScreen } from './js/GameClearScreen.js';
-        const GAME_WIDTH = 800;
-        const GAME_HEIGHT = 600;
-        const config = {
-            type: Phaser.AUTO,
-            scale: {
-                mode: Phaser.Scale.FIT,
-                autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: GAME_WIDTH,
-                height: GAME_HEIGHT,
-                parent: 'game-container',
-            },
-            backgroundColor: '#000000',
-            scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
-        };
-        const game = new Phaser.Game(config);
+        window.addEventListener('DOMContentLoaded', async () => {
+            const Phaser = (await import('https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm')).default;
+            const { AssetLoaderScene } = await import('./AssetLoaderScene.js');
+            const { TitleScreen } = await import('./js/TitleScreen.js');
+            const { MainScreen } = await import('./js/MainScreen.js');
+            const { UIScene } = await import('./js/UI.js');
+            const { GameOverScreen } = await import('./js/GameOverScreen.js');
+            const { GameClearScreen } = await import('./js/GameClearScreen.js');
+
+            const GAME_WIDTH = 800;
+            const GAME_HEIGHT = 600;
+            const config = {
+                type: Phaser.AUTO,
+                scale: {
+                    mode: Phaser.Scale.FIT,
+                    autoCenter: Phaser.Scale.CENTER_BOTH,
+                    width: GAME_WIDTH,
+                    height: GAME_HEIGHT,
+                    parent: 'game-container',
+                },
+                backgroundColor: '#000000',
+                scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
+            };
+
+            new Phaser.Game(config);
+        });
     </script>
 </body>
 </html>

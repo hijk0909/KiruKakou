@@ -2,7 +2,7 @@
   "stages": [
     {
       "stage": 1,
-      "timer": 100,
+      "timer": 75,
       "energy_quota": 120,
       "season": 0,
       "enemy_spawn_interval": 2400,
@@ -20,7 +20,7 @@
     },
     {
       "stage": 2,
-      "timer": 100,
+      "timer": 60,
       "energy_quota": 250,
       "season": 1,
       "enemy_spawn_interval": 1200,

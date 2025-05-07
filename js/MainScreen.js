@@ -28,6 +28,8 @@ const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
 const ENEMY_SCORE = 100;
 
+const TIMER_ALARM = 11;
+
 export class MainScreen extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScreen' });
@@ -50,6 +52,8 @@ export class MainScreen extends Phaser.Scene {
         this.bg = null;
         this.bgs = [];
         this.season = 0;
+        this.timer_alarm_counter = TIMER_ALARM;
+        this.timer_alarm_se = null;
     }
 
     create() {
@@ -132,7 +136,9 @@ export class MainScreen extends Phaser.Scene {
 
         this.jingle = this.sound.add('j_round_start');
         this.jingle.play({volume:0.6});
-        
+
+        this.timer_alarm_counter = TIMER_ALARM;
+        this.timer_alarm_se = this.sound.add('se_timer');
     } // End of create()
 
     onPointerDown(pointer) {
@@ -333,6 +339,21 @@ export class MainScreen extends Phaser.Scene {
 
             // タイマー減少
             GameState.timer = Math.max(GameState.timer - delta / 1000, 0);
+            if ( GameState.timer < this.timer_alarm_counter){
+                this.timer_alarm_counter -= 1;
+                if (!this.timer_alarm_se.isPlaying){
+                    this.timer_alarm_se.play({volume:0.7});
+                }
+                this.ui.setTimerColor( GameState.timer / TIMER_ALARM);
+            }
+
+            if (GameState.timer === 0){
+                this.gameState = GAME_STATE_FAILED;
+                this.bgm.stop();
+                this.jingle = this.sound.add('j_round_failed');
+                this.jingle.play({volume:0.5});
+                this.ui.timeOverText.setVisible(true);
+            }
 
             // キャラクター生成処理
             this.spawnTimerEnemy += delta;
@@ -397,7 +418,6 @@ export class MainScreen extends Phaser.Scene {
                     // 作成途中で敵機に触れられた処理（ミス）
                     const type = ch.get_type();
                     if ( type === CH_TYPE_ENEMY){
-                        GameState.lives -= 1; // 残機を減らす
                         this.gameState = GAME_STATE_FAILED;
                         this.bgm.stop();
                         this.jingle = this.sound.add('j_round_failed');
@@ -489,7 +509,9 @@ export class MainScreen extends Phaser.Scene {
         } else if (this.gameState === GAME_STATE_FAILED){
 
             // 【GAME_STATE】クリア失敗
+
             if ( !this.jingle.isPlaying){
+                GameState.lives -= 1; // 残機を減らす
                 if (GameState.lives <= 0) {
                     this.scene.stop('UIScene');
                     this.scene.start('GameOverScreen');
