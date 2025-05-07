@@ -2,7 +2,7 @@
   "stages": [
     {
       "stage": 1,
-      "timer": 75,
+      "timer": 50,
       "energy_quota": 120,
       "season": 0,
       "enemy_spawn_interval": 2400,
@@ -20,7 +20,7 @@
     },
     {
       "stage": 2,
-      "timer": 60,
+      "timer": 40,
       "energy_quota": 250,
       "season": 1,
       "enemy_spawn_interval": 1200,
@@ -38,7 +38,7 @@
     },
     {
       "stage": 3,
-      "timer": 120,
+      "timer": 50,
       "energy_quota": 150,
       "season": 2,
       "enemy_spawn_interval":  3000,
@@ -56,7 +56,7 @@
     },
     {
       "stage": 4,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 100,
       "season": 3,
       "enemy_spawn_interval": 2000,
@@ -74,7 +74,7 @@
     },
     {
       "stage": 5,
-      "timer": 100,
+      "timer": 50,
       "energy_quota": 240,
       "season": 0,
       "enemy_spawn_interval": 1800,
@@ -92,7 +92,7 @@
     },
     {
       "stage": 6,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 250,
       "season": 1,
       "enemy_spawn_interval": 900,
@@ -110,7 +110,7 @@
     },
     {
       "stage": 7,
-      "timer": 100,
+      "timer": 50,
       "energy_quota": 150,
       "season": 2,
       "enemy_spawn_interval":  3000,
@@ -128,7 +128,7 @@
     },
     {
       "stage": 8,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 100,
       "season": 3,
       "enemy_spawn_interval": 2000,
@@ -146,7 +146,7 @@
     },
     {
       "stage": 9,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 360,
       "season": 0,
       "enemy_spawn_interval": 900,
@@ -164,7 +164,7 @@
     },
     {
       "stage": 10,
-      "timer": 100,
+      "timer": 50,
       "energy_quota": 300,
       "season": 1,
       "enemy_spawn_interval": 900,
@@ -182,7 +182,7 @@
     },
     {
       "stage": 11,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 150,
       "season": 2,
       "enemy_spawn_interval":  3000,
@@ -200,7 +200,7 @@
     },
     {
       "stage": 12,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 100,
       "season": 3,
       "enemy_spawn_interval": 2000,
@@ -218,7 +218,7 @@
     },
     {
       "stage": 13,
-      "timer": 120,
+      "timer": 50,
       "energy_quota": 400,
       "season": 0,
       "enemy_spawn_interval": 800,
@@ -236,7 +236,7 @@
     },
     {
       "stage": 14,
-      "timer": 120,
+      "timer": 50,
       "energy_quota": 280,
       "season": 1,
       "enemy_spawn_interval": 800,
@@ -254,7 +254,7 @@
     },
     {
       "stage": 15,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 150,
       "season": 2,
       "enemy_spawn_interval":  1800,
@@ -272,7 +272,7 @@
     },
     {
       "stage": 16,
-      "timer": 120,
+      "timer": 60,
       "energy_quota": 100,
       "season": 3,
       "enemy_spawn_interval": 1200,
@@ -290,7 +290,7 @@
     },
     {
       "stage": 17,
-      "timer": 120,
+      "timer": 50,
       "energy_quota": 500,
       "season": 0,
       "enemy_spawn_interval": 600,

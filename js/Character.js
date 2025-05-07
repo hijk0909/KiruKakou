@@ -9,6 +9,8 @@ export const REACT_TYPE_POWERUP = 1;
 export const REACT_TYPE_PENALTY = 2;
 
 const SHADOW_OFFSET = 40;
+const ENEMY_OFFSET = -2;
+const FRIEND_OFFSET = -10;
 
 export class Character {
 
@@ -20,6 +22,7 @@ export class Character {
         this.collision = new Phaser.Geom.Rectangle(-20, -20, 40, 40);  // 中心からの相対矩形
         this.sprite = null;
         this.sprite_shadow = null;
+        this.graphics = null;
         this.speed = 1.0;
         this.movePattern = 0;
         this.moveParam1 = 0;
@@ -49,10 +52,11 @@ export class Character {
             graphics.destroy();
         }
 
+        // スプライトの作成
         if (this.type === CH_TYPE_FRIEND){
-            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + SHADOW_OFFSET, 'img_shadow');
-            this.sprite = this.scene.add.sprite(pos.x, pos.y, 'ch_friend');
-            this.sprite.setScale(1.2);
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET + SHADOW_OFFSET, 'img_shadow').setDepth(1);;
+            this.sprite = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET, 'ch_friend').setDepth(2);;
+            this.sprite.setScale(1.1);
             if (!this.scene.anims.exists('ch_friend_anims')) {
                 this.scene.anims.create({key:'ch_friend_anims',
                     frames: this.scene.anims.generateFrameNumbers('ch_friend', { start: 0, end: 7 }),
@@ -61,9 +65,9 @@ export class Character {
             }
             this.sprite.play('ch_friend_anims');
         } else if (this.type == CH_TYPE_ENEMY){
-            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + SHADOW_OFFSET, 'img_shadow');
-            this.sprite = this.scene.add.sprite(pos.x, pos.y, 'ch_enemy');
-            this.sprite.setScale(0.38);
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET + SHADOW_OFFSET, 'img_shadow');
+            this.sprite = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET, 'ch_enemy');
+            this.sprite.setScale(0.30);
             if (!this.scene.anims.exists('ch_enemy_anims')) {
                 this.scene.anims.create({key:'ch_enemy_anims',
                     frames: this.scene.anims.generateFrameNumbers('ch_enemy', { start: 0, end: 3 }),
@@ -72,6 +76,9 @@ export class Character {
             }
             this.sprite.play('ch_enemy_anims');
         }
+
+        // 重ね描き用グラフィックス
+        this.graphics = this.scene.add.graphics().setDepth(3);
     }
 
     setParameter(speed, pattern, param1, param2) {
@@ -102,14 +109,16 @@ export class Character {
     }
 
     move() {
-        if (this.type === CH_TYPE_ENEMY) {
-            this.move_dir(1);
-            this.sprite.setPosition(this.pos.x, this.pos.y);
-            this.sprite_shadow.setPosition(this.pos.x, this.pos.y + SHADOW_OFFSET);
-        } else if (this.type === CH_TYPE_FRIEND) {
-            this.move_dir(-1);
-            this.sprite.setPosition(this.pos.x, this.pos.y);
-            this.sprite_shadow.setPosition(this.pos.x, this.pos.y + SHADOW_OFFSET);
+        if ( !GameState.stopMode ){
+            if (this.type === CH_TYPE_ENEMY) {
+                this.move_dir(1);
+                this.sprite.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET);
+                this.sprite_shadow.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET + SHADOW_OFFSET);
+            } else if (this.type === CH_TYPE_FRIEND) {
+                this.move_dir(-1);
+                this.sprite.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET);
+                this.sprite_shadow.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET + SHADOW_OFFSET);
+            }
         }
 
         const { width, height } = this.scene.game.canvas;
@@ -163,18 +172,20 @@ export class Character {
     }
 
     draw(graphics) {
-    //    if (this.type === CH_TYPE_ENEMY) {
-            // graphics.fillStyle(0xff0000, 1);
-            // graphics.beginPath();
-            // graphics.moveTo(this.pos.x, this.pos.y + 20);
-            // graphics.lineTo(this.pos.x - 20, this.pos.y - 20);
-            // graphics.lineTo(this.pos.x + 20, this.pos.y - 20);
-            // graphics.closePath();
-            // graphics.fillPath();
-    //    } else if (this.type === CH_TYPE_FRIEND) {
-            // graphics.fillStyle(0x00ff00, 1);
-            // graphics.fillCircle(this.pos.x, this.pos.y, 20);
-    //    }
+        this.graphics.clear();
+        if ( GameState.stopMode ){
+            if (this.type === CH_TYPE_ENEMY) {
+                this.graphics.lineStyle(2, 0xff0000);
+            } else if (this.type === CH_TYPE_FRIEND) {
+                this.graphics.lineStyle(2, 0x00ffff);
+            }
+            this.graphics.strokeRect(
+                this.pos.x + this.collision.x,
+                this.pos.y + this.collision.y,
+                this.collision.width,
+                this.collision.height
+            )
+        }
     }
 
     destroy(){
@@ -185,6 +196,10 @@ export class Character {
         if ( this.sprite_shadow ){
             this.sprite_shadow.destroy();
             this.sprite_shadow = null;
+        }
+        if ( this.graphics ){
+            this.graphics.destroy();
+            this.graphics = null;
         }
     }
 

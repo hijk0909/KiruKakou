@@ -8,12 +8,12 @@ export class TitleScreen extends Phaser.Scene {
     create() {
         const cx = this.game.canvas.width / 2;
         const cy = this.game.canvas.height / 2;
-        this.add.text(cx, cy - 20, 'KIRU KAKOU', { fontSize: '64px', fill: '#ffee00' , stroke: '#ff0000', strokeThickness: 2}).setOrigin(0.5,0.5);
-        this.add.text(cx, cy + 220, 'Copyright ©2025 Current Color Co. Ltd. All rights reserved.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
-        this.add.text(cx, cy + 240, 'Version 1.0 2025.5.7.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
+        this.add.text(cx, cy - 50, 'KIRU KAKOU', { fontSize: '64px', fill: '#ffee00' , stroke: '#ff0000', strokeThickness: 2}).setOrigin(0.5,0.5);
+        this.add.text(cx, cy + 215, 'Copyright ©2025 Current Color Co. Ltd. All rights reserved.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
+        this.add.text(cx, cy + 240, 'Version 1.1 2025.5.8.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
         this.stageText = this.add.text(cx, cy + 150, 'STAGE：1',{ fontSize: '24px', fill: '#eee' }).setOrigin(0.5,0.5);
 
-        const btn_play = this.add.image(cx, cy + 80, 'btn_play')
+        const btn_play = this.add.image(cx, cy + 60, 'btn_play')
         .setOrigin(0.5,0.5)
         .setInteractive()
         .on('pointerdown', () => {this.start_game();})
@@ -31,6 +31,8 @@ export class TitleScreen extends Phaser.Scene {
         .on('pointerdown', () => {this.stage_inc();})
         .on('pointerover', () => {btn_right.setTint(0xcccccc);})
         .on('pointerout', () => {btn_right.clearTint();});
+
+        this.keyC = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
 
         GameState.reset(); // グローバル初期化
     }
@@ -57,4 +59,10 @@ export class TitleScreen extends Phaser.Scene {
             this.scene.launch('UIScene');
     }
 
+    update(time, delta) {
+        // 隠しキーボード操作
+        if (Phaser.Input.Keyboard.JustDown(this.keyC)){
+            this.scene.start('GameClearScreen');
+        }
+    }
 }

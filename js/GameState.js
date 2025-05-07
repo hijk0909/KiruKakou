@@ -3,8 +3,8 @@ export const GameState = {
     lives: 3,
     stage: 1,
     score: 0,
-    nextExtend: 10000,
-    everyExtend: 20000,
+    nextExtend: 20000,
+    everyExtend: 50000,
     maxStage: 17,
     energy: 0,
     maxEnergy: 100,
@@ -12,6 +12,7 @@ export const GameState = {
     energyMultiple: 0,
     timer: 0,
     verticalMargin: 100,
+    stopMode: false,
 
     reset() {
         this.lives = 3;
@@ -21,5 +22,6 @@ export const GameState = {
         this.energy = 0;
         this.energyMultiple = 0;
         this.timer = 120;
+        this.stopMode = false;
     }
 };

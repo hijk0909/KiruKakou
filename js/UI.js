@@ -22,9 +22,11 @@ export class UIScene extends Phaser.Scene {
         this.pathLengthText    = this.add.text(rx, 60, 'LENGTH: 0', style1).setOrigin(0,0.5);
         this.loopAreaText      = this.add.text(rx, 80, 'AREA: 0', style1).setOrigin(0,0.5);
 
-        const style4 = { font: '24px Arial', fill: '#ff0000' };
-        this.intersectionNG = this.add.text(rx-18,40,'X',style4).setOrigin(0,0.5);
-        this.intersectionNG.setVisible(false);
+        const style5 = { font: '32px Arial', fill: '#aaddff' };  
+        this.intersectionMark = this.add.text(rx-20,40,'>',style5).setOrigin(0,0.5);
+        this.intersectionMark.setVisible(false);
+
+        const style4 = { font: '24px Arial', fill: '#ff0000' };   
         this.pathLengthNG = this.add.text(rx-18,60,'X',style4).setOrigin(0,0.5);
         this.pathLengthNG.setVisible(false);
         this.loopAreaNG = this.add.text(rx-18,80,'X',style4).setOrigin(0,0.5);
@@ -36,6 +38,7 @@ export class UIScene extends Phaser.Scene {
         this.timerText         = this.add.text(10, ch-40, 'TIMER：0', style2).setOrigin(0,1);
         this.stageText         = this.add.text(10, ch-10, 'STAGE：0', style2).setOrigin(0,1);
         this.livesText         = this.add.text(cw - 10, ch-10, 'LIVES：0', style2).setOrigin(1,1);
+        this.stopText          = this.add.text(cx, ch-10, 'STOP', style2).setOrigin(0.5,1);
 
         const style3 = { font: '48px Arial', fill: '#ffff00', stroke: '#ff0000', strokeThickness: 2};
         this.stageBeginText    = this.add.text(cx,cy, 'ROUND START', style3).setOrigin(0.5, 0.5);
@@ -52,12 +55,15 @@ export class UIScene extends Phaser.Scene {
     }
 
     update(time, delta) {
+
         this.score = GameState.score;
         this.scoreText.setText(`SCORE：${GameState.score}`);
         this.energyText.setText(`MANA：${GameState.energy} / ${GameState.maxEnergy}`);
         this.timerText.setText(`TIMER：${Math.floor(GameState.timer)}`); 
         this.stageText.setText(`STAGE：${GameState.stage}`); 
-        this.livesText.setText(`LIVES：${GameState.lives}`);    
+        this.livesText.setText(`LIVES：${GameState.lives}`);
+
+        this.stopText.setVisible(GameState.stopMode);
 
         GameState.posEnergy = this.game.canvas.width * GameState.energy / GameState.maxEnergy;
         this.uiGraphics.clear();
@@ -74,7 +80,7 @@ export class UIScene extends Phaser.Scene {
         const shadow_green = Math.round(128 * ratio);
         const shadow_blue = 0;
 
-        // RGB値を16進文字列に変換する関数
+        // 値を16進文字列に変換する関数
         const toHex = (value) => {
             const hex = value.toString(16);
             return hex.length === 1 ? '0' + hex : hex;
@@ -84,8 +90,8 @@ export class UIScene extends Phaser.Scene {
         const font_color = `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
         const shadow_color = `#${toHex(shadow_red)}${toHex(shadow_green)}${toHex(shadow_blue)}`;
 
-        const style5 = { font: '24px Arial', fill: font_color, shadow: {offsetX : 2, offsetY: 2, color : shadow_color, blur:0, fill: true, stroke: false }};
-        this.timerText.setStyle(style5);
+        const style6 = { font: '24px Arial', fill: font_color, shadow: {offsetX : 2, offsetY: 2, color : shadow_color, blur:0, fill: true, stroke: false }};
+        this.timerText.setStyle(style6);
     }
 
     setIntersections(val) {
@@ -103,8 +109,8 @@ export class UIScene extends Phaser.Scene {
         this.loopAreaText.setText(`AREA: ${Math.round(val)}`);
     }
 
-    setIntersectionNG(){
-        this.intersectionNG.setVisible(true);
+    setIntersectionMark(){
+        this.intersectionMark.setVisible(true);
     }
 
     setPathLengthNG(){
@@ -116,7 +122,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     clearNG(){
-        this.intersectionNG.setVisible(false);
+        this.intersectionMark.setVisible(false);
         this.pathLengthNG.setVisible(false);
         this.loopAreaNG.setVisible(false);
     }

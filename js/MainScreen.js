@@ -69,6 +69,7 @@ export class MainScreen extends Phaser.Scene {
         this.season = stageInfo.season;
 
         GameState.timer = stageInfo.timer;
+        GameState.stopMode= false;
 
         this.spawnIntervalEnemy = stageInfo.enemy_spawn_interval;
         this.spawnIntervalFriend = stageInfo.friend_spawn_interval;
@@ -94,7 +95,6 @@ export class MainScreen extends Phaser.Scene {
 
         this.pathGraphics = this.add.graphics({ lineStyle: { width: 2, color: 0x00ff00 } });
         this.areaGraphics = this.add.graphics();
-        this.charGraphics = this.add.graphics(); 
         this.effGraphics = this.add.graphics(); 
 
         this.starParticles = null;
@@ -116,6 +116,9 @@ export class MainScreen extends Phaser.Scene {
             this.confirmPath();            
         }
         canvas.addEventListener("touchcancel", this.handleTouchCancel);
+
+        this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+        this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
 
         // ゲームのセットアップ
         this.scene.launch('UIScene');
@@ -139,6 +142,9 @@ export class MainScreen extends Phaser.Scene {
 
         this.timer_alarm_counter = TIMER_ALARM;
         this.timer_alarm_se = this.sound.add('se_timer');
+
+        this.start_round();
+
     } // End of create()
 
     onPointerDown(pointer) {
@@ -204,6 +210,7 @@ export class MainScreen extends Phaser.Scene {
             this.confirmHit();
             this.loopArea = 0
             path_mode = 0;
+            GameState.stopMode = false;
         } else if (intersections.length === 1 && this.loopArea > PATH_MIN_LOOPAREA) {
             // 交差数１（囲み成立）
             this.pathState = PATH_STATE_ENCIRCLE;
@@ -226,16 +233,18 @@ export class MainScreen extends Phaser.Scene {
             this.areaGraphics.closePath();
             this.areaGraphics.fillPath();
             this.pathCounter = PATH_COUNTER_ENCIRCLE;
-            GameState.energyMultiple = 0;
             let eff = new Effect(this);
             eff.setType(EFF_TYPE_MANA, new Phaser.Math.Vector2(cx, cy));
             this.effects.push(eff);
             this.sound.play('se_path_encircle');
             path_mode = 1;
+            GameState.energyMultiple = 1;
+            GameState.stopMode = false;
         } else if (intersections.length === 1 && this.loopArea < AREA_THRESHOLD){
             // 交差数１（囲み不成立、攻撃成立）
             this.confirmHit();
             path_mode = 0;
+            GameState.stopMode = false;
         } else {
         // 交差数２以上 または 長さ・面積 不十分（軌跡の発効は不成立）
             this.pathState = PATH_STATE_FAILED;
@@ -243,16 +252,17 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.lineStyle(4, 0x808080, 0.5);
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.pathCounter = PATH_COUNTER_FAILED;
-            this.sound.play('se_path_fail');
             if (intersections.length > 1){
                 for (const isp of intersections) {
-                    // console.log(`intersection i1:${isp.i1} (${this.pathPoints[isp.i1].x},${this.pathPoints[isp.i1].y})-(${this.pathPoints[isp.i1+1].x},${this.pathPoints[isp.i1+1].y})\
-                    //                           i2:${isp.i2} (${this.pathPoints[isp.i2].x},${this.pathPoints[isp.i2].y})-(${this.pathPoints[isp.i2+1].x},${this.pathPoints[isp.i2+1].y})\
-                    //                           x:${isp.point.x} y:${isp.point.y}`);
                     let eff = new Effect(this);
                     eff.setType(EFF_TYPE_CROSS, new Phaser.Math.Vector2(isp.point.x, isp.point.y));
                     this.effects.push(eff);
                 }
+                this.sound.play('se_stop');
+                GameState.stopMode = true;
+            } else {
+                this.sound.play('se_path_fail');
+                GameState.stopMode = false;
             }
             path_mode = 2;
         }
@@ -260,7 +270,7 @@ export class MainScreen extends Phaser.Scene {
         // 不成立理由の表示
         if (path_mode === 2){
             if (intersections.length > 1){
-                this.ui.setIntersectionNG();
+                this.ui.setIntersectionMark();
                 this.loopArea = 0;
             } else if (intersections.length === 1 && this.loopArea <= PATH_MIN_LOOPAREA){
                 this.ui.setLoopAreaNG();
@@ -356,16 +366,18 @@ export class MainScreen extends Phaser.Scene {
             }
 
             // キャラクター生成処理
-            this.spawnTimerEnemy += delta;
-            if (this.spawnTimerEnemy >= this.spawnIntervalEnemy) {
-                this.spawnTimerEnemy = 0;
-                this.spawn_enemy();
-            }
-            this.spawnTimerFriend += delta;
-            if (this.spawnTimerFriend >= this.spawnIntervalFriend) {
-                this.spawnTimerFriend = 0;
-                this.spawn_friend();
-            }
+            if ( !GameState.stopMode ){
+                this.spawnTimerEnemy += delta;
+                if (this.spawnTimerEnemy >= this.spawnIntervalEnemy) {
+                    this.spawnTimerEnemy = 0;
+                    this.spawn_enemy();
+                }
+                this.spawnTimerFriend += delta;
+                if (this.spawnTimerFriend >= this.spawnIntervalFriend) {
+                    this.spawnTimerFriend = 0;
+                    this.spawn_friend();
+                }
+            }  
 
             // キャラクター移動・当たり判定（削除が有り得るので逆順）
             for (let i = this.characters.length - 1; i >= 0; i--) {
@@ -383,10 +395,8 @@ export class MainScreen extends Phaser.Scene {
                     let eff = new Effect(this);
                     if ( type === CH_TYPE_ENEMY ){
                         eff.setType(EFF_TYPE_ENEMY_GET, ch.get_position());
-                        GameState.energyMultiple = Math.max(GameState.energyMultiple - 1 ,1);
                     } else if ( type === CH_TYPE_FRIEND ){
                         eff.setType(EFF_TYPE_FRIEND_GET, ch.get_position());
-                        GameState.energyMultiple += 1;
                     }
                     this.effects.push(eff);
                     ch.setAlive(false);
@@ -396,6 +406,7 @@ export class MainScreen extends Phaser.Scene {
                     if ( type === CH_TYPE_ENEMY ){
                         let eff = new Effect(this);
                         eff.setType(EFF_TYPE_HIT, ch.get_position());
+                        eff.setParameter(Math.sqrt(this.scoreMultiple));
                         this.effects.push(eff);
                         let score = ENEMY_SCORE * this.scoreMultiple;
                         this.add_score(score);
@@ -512,7 +523,7 @@ export class MainScreen extends Phaser.Scene {
 
             if ( !this.jingle.isPlaying){
                 GameState.lives -= 1; // 残機を減らす
-                if (GameState.lives <= 0) {
+                if (GameState.lives < 0) {
                     this.scene.stop('UIScene');
                     this.scene.start('GameOverScreen');
                 } else {
@@ -521,6 +532,22 @@ export class MainScreen extends Phaser.Scene {
             }
 
         } // End of if(this.gameState)
+
+        // 隠しキーボード操作
+        if (this.keyZ.isDown) {
+            GameState.stopMode = true;
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.keyQ)){
+            if (this.bgm){
+                this.bgm.stop();
+            }
+            if (this.jingle){
+                this.jingle.stop();
+            }
+            this.scene.stop('UIScene');
+            this.scene.start('TitleScreen');
+        }
+
     } // End of update()
 
     destroy(){
@@ -560,9 +587,8 @@ export class MainScreen extends Phaser.Scene {
 
     // キャラの再描画（軌跡の描画は含まない）
     redraw_ch() {
-        this.charGraphics.clear();
         for (const ch of this.characters) {
-            ch.draw(this.charGraphics);
+            ch.draw();
         }
     }
 
@@ -641,7 +667,7 @@ export class MainScreen extends Phaser.Scene {
             this.bgFrameTimer = 0;
        } else if (season === 2){
             this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'bg_autumn').setOrigin(0);
-            this.bg.setTint(0xdddddd);
+            this.bg.setTint(0xaaaaaa);
        } else if (season === 3){
             this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'bg_winter').setOrigin(0);
             this.bg.setTint(0xcccccc);
@@ -659,6 +685,41 @@ export class MainScreen extends Phaser.Scene {
                 });
             }
         }
+    }
+
+    // ラウンドスタート時の演出
+    start_round(){
+        // 黒のオーバーレイ
+        this.overlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 1)
+            .setOrigin(0)
+            .setDepth(100);
+
+        // マスク用グラフィクス
+        let revealMaskGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+        let mask = revealMaskGraphics.createGeometryMask();
+        mask.invertAlpha = true;
+        this.overlay.setMask(mask);
+
+        // 半径を変えるオブジェクト
+        let maskData = { radius: 1 };
+
+        // Tweenで半径を増やす（例：500 → 画面全体に広がる）
+        this.tweens.add({
+            targets: maskData,
+            radius: 500,
+            duration: 2000,
+            ease: 'Sine.easeOut',
+            onUpdate: () => {
+                revealMaskGraphics.clear();
+                revealMaskGraphics.fillStyle(0xffffff);
+                revealMaskGraphics.beginPath();
+                revealMaskGraphics.arc(this.scale.width / 2, this.scale.height / 2, maskData.radius, 0, Math.PI * 2);
+                revealMaskGraphics.fillPath();
+            },
+            onComplete: () => {
+                this.overlay.destroy();  // 演出後はマスクと覆いを削除
+            }
+        });
     }
 }
 

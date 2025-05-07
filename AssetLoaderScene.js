@@ -36,6 +36,7 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.audio('se_tap', './assets/audio/se/SE_TAP.mp3')
         this.load.audio('se_extend', './assets/audio/se/SE_EXTEND.mp3')
         this.load.audio('se_timer', './assets/audio/se/SE_TIMER.mp3')
+        this.load.audio('se_stop', './assets/audio/se/SE_STOP.mp3')
 
         this.load.audio('j_round_start', './assets/audio/jingle/J_ROUND_START.mp3')
         this.load.audio('j_round_failed', './assets/audio/jingle/J_ROUND_FAILED.mp3')

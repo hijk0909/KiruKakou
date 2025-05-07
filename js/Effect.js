@@ -11,9 +11,12 @@ export const EFF_TYPE_CROSS = 5;
 export const EFF_TYPE_SPARK = 6;
 export const EFF_TYPE_MANA = 7;
 
+const ENERGY_DOWN_UNIT = 100;
+const ENERGY_UP_UNIT = 5;
+
 const EFF_PERIOD_KILL = 60;
-const EFF_PERIOD_HIT = 120;
-const EFF_PERIOD_SCORE = 80;
+const EFF_PERIOD_HIT = 80;
+const EFF_PERIOD_SCORE = 120;
 const EFF_PERIOD_CROSS = 40;
 const EFF_PERIOD_SPARK = 120;
 const EFF_PERIOD_MANA = 180;
@@ -28,6 +31,7 @@ export class Effect {
         this.text = null;
         this.textObject = null;
         this.emitter = null;
+        this.param1 = 0;
     }
 
     setType(type, pos) {
@@ -114,14 +118,19 @@ export class Effect {
         }
     }
 
+    setParameter(val) {
+        this.param1 = val;
+    }
+
     setText(txt) {
         // console.log(`setText: ${txt}`);
         // console.log('this:', this);
         // console.log(`txt: ${this.text} pos.x:${this.pos.x} pos.y:${this.pos.y}`);
         this.text = txt;
         this.textObject = this.scene.add.text(this.pos.x, this.pos.y, this.text, {
-            fontSize: '24px',
-            color: '#e0e0e0'
+            fontFamily: 'Helvetica, Arial',
+            fontSize: '28px',
+            color: '#ffeedd'
         }).setOrigin(0.5, 0.5);
     }
 
@@ -137,14 +146,15 @@ export class Effect {
         if (this.type === EFF_TYPE_ENEMY_GET) {
             let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
             if (distance < 10){
-                GameState.energy = Math.max( GameState.energy - 10, 0);
+                GameState.energy = Math.max( GameState.energy - ENERGY_DOWN_UNIT, 0);
                 this.scene.sound.play('se_mana_down');
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_FRIEND_GET) {
             let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
             if (distance < 10){
-                GameState.energy = Math.min( GameState.energy + GameState.energyMultiple * 5, GameState.maxEnergy);
+                GameState.energy = Math.min( GameState.energy + GameState.energyMultiple * ENERGY_UP_UNIT, GameState.maxEnergy);
+                GameState.energyMultiple += 1;
                 this.scene.sound.play('se_mana_up');
                 // this.alive = false;
                 // 自分自身を EFF_TYPE_SPARK（パーティクル）に変更
@@ -215,7 +225,7 @@ export class Effect {
             graphics.strokePath();
         } else if (this.type === EFF_TYPE_HIT) {
             const a = this.counter / EFF_PERIOD_HIT;
-            const r = (EFF_PERIOD_HIT - this.counter) + 10;
+            const r = (EFF_PERIOD_HIT - this.counter + 1) * this.param1;
             graphics.lineStyle(4, 0xffff00, a);
             draw_star(graphics, this.pos, r);
         } else if (this.type === EFF_TYPE_SCORE) {
