@@ -54,8 +54,8 @@ export class Character {
 
         // スプライトの作成
         if (this.type === CH_TYPE_FRIEND){
-            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET + SHADOW_OFFSET, 'img_shadow').setDepth(1);;
-            this.sprite = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET, 'ch_friend').setDepth(2);;
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET + SHADOW_OFFSET, 'img_shadow').setDepth(1);
+            this.sprite = this.scene.add.sprite(pos.x, pos.y + FRIEND_OFFSET, 'ch_friend').setDepth(2);
             this.sprite.setScale(1.1);
             if (!this.scene.anims.exists('ch_friend_anims')) {
                 this.scene.anims.create({key:'ch_friend_anims',
@@ -65,8 +65,8 @@ export class Character {
             }
             this.sprite.play('ch_friend_anims');
         } else if (this.type == CH_TYPE_ENEMY){
-            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET + SHADOW_OFFSET, 'img_shadow');
-            this.sprite = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET, 'ch_enemy');
+            this.sprite_shadow = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET + SHADOW_OFFSET, 'img_shadow').setDepth(1);
+            this.sprite = this.scene.add.sprite(pos.x, pos.y + ENEMY_OFFSET, 'ch_enemy').setDepth(2);
             this.sprite.setScale(0.30);
             if (!this.scene.anims.exists('ch_enemy_anims')) {
                 this.scene.anims.create({key:'ch_enemy_anims',
@@ -109,7 +109,10 @@ export class Character {
     }
 
     move() {
-        if ( !GameState.stopMode ){
+
+        const { width, height } = this.scene.game.canvas;
+
+        if ( !GameState.stopMode && !GameState.tornadeMode){
             if (this.type === CH_TYPE_ENEMY) {
                 this.move_dir(1);
                 this.sprite.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET);
@@ -119,9 +122,26 @@ export class Character {
                 this.sprite.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET);
                 this.sprite_shadow.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET + SHADOW_OFFSET);
             }
+        } else if (GameState.tornadeMode){
+            if (this.type === CH_TYPE_ENEMY){
+                if (this.pos.x > 10 ){
+                    this.pos.x -= 5;
+                } else {
+                    this.pos.x += 1;
+                }
+                this.sprite.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET);
+                this.sprite_shadow.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET + SHADOW_OFFSET);
+            } else if (this.type === CH_TYPE_FRIEND){
+                if (this.pos.x < width - 10){
+                    this.pos.x += 5;
+                } else {
+                    this.pos.x -= 1;
+                }
+                this.sprite.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET);
+                this.sprite_shadow.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET + SHADOW_OFFSET);
+            }
         }
 
-        const { width, height } = this.scene.game.canvas;
         if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
             this.alive = false;
                 this.destroy();

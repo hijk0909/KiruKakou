@@ -37,6 +37,10 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.audio('se_extend', './assets/audio/se/SE_EXTEND.mp3')
         this.load.audio('se_timer', './assets/audio/se/SE_TIMER.mp3')
         this.load.audio('se_stop', './assets/audio/se/SE_STOP.mp3')
+        this.load.audio('se_item_detect', './assets/audio/se/SE_ITEM_DETECT.mp3')
+        this.load.audio('se_item_appear', './assets/audio/se/SE_ITEM_APPEAR.mp3')
+        this.load.audio('se_timer_add', './assets/audio/se/SE_TIMER_ADD.mp3')
+        this.load.audio('se_tornado', './assets/audio/se/SE_TORNADO.mp3')
 
         this.load.audio('j_round_start', './assets/audio/jingle/J_ROUND_START.mp3')
         this.load.audio('j_round_failed', './assets/audio/jingle/J_ROUND_FAILED.mp3')
@@ -63,6 +67,14 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.image('btn_left', 'assets/images/buttons/btn_left.png');
         this.load.image('btn_right', 'assets/images/buttons/btn_right.png');
         this.load.image('btn_play', 'assets/images/buttons/btn_play.png');
+
+        this.load.image('item_0', 'assets/images/icons/item_0.png');
+        this.load.image('item_p', 'assets/images/icons/item_p.png');
+        this.load.image('item_s', 'assets/images/icons/item_s.png');
+        this.load.image('item_t', 'assets/images/icons/item_t.png');        
+
+        this.load.spritesheet('tornado', 'assets/images/icons/tornado.png', {
+            frameWidth: 16, frameHeight: 16 });
 
         this.load.json('stage_data', 'assets/data/stage.json');
     }

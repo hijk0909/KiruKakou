@@ -1,25 +1,29 @@
 // Effect.js
 import { GameState } from './GameState.js';
-import { UIScene } from './UI.js';
+// import { UIScene } from './UI.js';
 
 export const EFF_TYPE_ENEMY_GET = 0;
 export const EFF_TYPE_FRIEND_GET = 1;
 export const EFF_TYPE_KILL = 2;
 export const EFF_TYPE_HIT = 3;
-export const EFF_TYPE_SCORE = 4;
+export const EFF_TYPE_TEXT = 4;
 export const EFF_TYPE_CROSS = 5;
 export const EFF_TYPE_SPARK = 6;
 export const EFF_TYPE_MANA = 7;
+export const EFF_TYPE_TORNADO = 8;
 
 const ENERGY_DOWN_UNIT = 100;
 const ENERGY_UP_UNIT = 5;
 
 const EFF_PERIOD_KILL = 60;
 const EFF_PERIOD_HIT = 80;
-const EFF_PERIOD_SCORE = 120;
+const EFF_PERIOD_TEXT = 120;
 const EFF_PERIOD_CROSS = 40;
 const EFF_PERIOD_SPARK = 120;
 const EFF_PERIOD_MANA = 180;
+const EFF_PERIOD_TORNADO = 180;
+
+const MAX_TORNADO = 10;
 
 export class Effect {
     constructor(scene) {
@@ -32,6 +36,7 @@ export class Effect {
         this.textObject = null;
         this.emitter = null;
         this.param1 = 0;
+        this.sprites = [];
     }
 
     setType(type, pos) {
@@ -42,8 +47,8 @@ export class Effect {
             this.counter = EFF_PERIOD_KILL;
         } else if (this.type === EFF_TYPE_HIT){
             this.counter = EFF_PERIOD_HIT;
-        } else if (this.type === EFF_TYPE_SCORE){
-            this.counter = EFF_PERIOD_SCORE;
+        } else if (this.type === EFF_TYPE_TEXT){
+            this.counter = EFF_PERIOD_TEXT;
         } else if (this.type === EFF_TYPE_CROSS){
             this.counter = EFF_PERIOD_CROSS;
         } else if (this.type == EFF_TYPE_SPARK){
@@ -115,6 +120,18 @@ export class Effect {
                 quantity: 60 // 一度に何個放出するか
             });
             this.emitter.explode(60, pos.x, pos.y); 
+        } else if (this.type == EFF_TYPE_TORNADO){
+            this.counter = EFF_PERIOD_TORNADO;
+            if (!this.scene.anims.exists('tornado_anims')) {
+                this.scene.anims.create({key:'tornado_anims',
+                    frames: this.scene.anims.generateFrameNumbers('tornado', { start: 0, end: 3 }),
+                    frameRate: 8, repeat: -1
+                });
+            }
+            for (let i=0;i<MAX_TORNADO;i++){
+                this.sprites[i] = this.scene.add.sprite(pos.x, pos.y, 'tornado')
+                this.sprites[i].play('tornado_anims');
+            }
         }
     }
 
@@ -123,9 +140,6 @@ export class Effect {
     }
 
     setText(txt) {
-        // console.log(`setText: ${txt}`);
-        // console.log('this:', this);
-        // console.log(`txt: ${this.text} pos.x:${this.pos.x} pos.y:${this.pos.y}`);
         this.text = txt;
         this.textObject = this.scene.add.text(this.pos.x, this.pos.y, this.text, {
             fontFamily: 'Helvetica, Arial',
@@ -170,7 +184,7 @@ export class Effect {
             if ( this.counter <= 0){
                 this.alive = false;
             }
-        } else if (this.type === EFF_TYPE_SCORE) {
+        } else if (this.type === EFF_TYPE_TEXT) {
             this.pos.y -= 0.25;
             this.counter -= 1;
             if (this.counter <= 0){
@@ -194,6 +208,27 @@ export class Effect {
             if ( this.counter <= 0){
                 this.scene.manaParticles.removeEmitter(this.emitter);
                 this.alive = false;
+            }
+        } else if (this.type === EFF_TYPE_TORNADO) {
+            this.counter -= 1;
+            const c = (EFF_PERIOD_TORNADO - this.counter) / EFF_PERIOD_TORNADO;
+            const r = 280*c;
+            const at = c*11;
+            for (let i=0;i<MAX_TORNADO;i++){
+                const sp = this.sprites[i];
+                const ai = i * Math.PI * 2 / MAX_TORNADO;
+                sp.setPosition(this.pos.x + r*Math.sin(ai+at), this.pos.y + r*Math.cos(ai+at)/2);
+                sp.setScale(1.0+c*11);
+                sp.setAlpha(1-c);
+            }
+            if ( this .counter <= 0){
+                this.alive = false;
+                for (let i=0;i<MAX_TORNADO;i++){
+                    if (this.sprites[i]){
+                        this.sprites[i].destroy();
+                    }
+                }
+                this.sprites = [];
             }
         }
 
@@ -228,7 +263,7 @@ export class Effect {
             const r = (EFF_PERIOD_HIT - this.counter + 1) * this.param1;
             graphics.lineStyle(4, 0xffff00, a);
             draw_star(graphics, this.pos, r);
-        } else if (this.type === EFF_TYPE_SCORE) {
+        } else if (this.type === EFF_TYPE_TEXT) {
             this.textObject.setPosition(this.pos.x, this.pos.y);
         } else if (this.type === EFF_TYPE_CROSS) {
             graphics.lineStyle(1, 0xffffff, 0.9);

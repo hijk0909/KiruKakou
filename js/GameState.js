@@ -9,10 +9,15 @@ export const GameState = {
     energy: 0,
     maxEnergy: 100,
     posEnergy: 0,
+    posTimer: 0,
     energyMultiple: 0,
     timer: 0,
+    maxTimer: 120,
+    timerAlarm: 11,
     verticalMargin: 100,
     stopMode: false,
+    tornadeMode: false,
+    tornadeCount: 120,
 
     reset() {
         this.lives = 3;
@@ -23,5 +28,7 @@ export const GameState = {
         this.energyMultiple = 0;
         this.timer = 120;
         this.stopMode = false;
+        this.tornadeMode = false;
+        this.tornadeCount = 120;
     }
 };
