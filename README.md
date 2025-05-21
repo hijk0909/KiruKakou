@@ -24,6 +24,13 @@ No download required, can be easily played on both PC and smartphones
   Enemies and friends stop moving, but the time limit continues to decrease.
   Extend your trail to attack many enemies or surround many friends.
 * Collect the required mana for each stage to clear the round.
+* The location of items is displayed as a hint at the start of a stage and
+   when you make a large circle.
+   Items will appear when you make a narrow circle. 
+   You can activate the item's effect by slashing.
+   - S: Adds score,
+   - T: Adds remaining time, 
+   - P: Power Storm (pushes enemies to the left and friends to the right)
 * Surrounding multiple friends at once multiplies the mana gained, making it easier to clear rounds.
 * Remaining time at round completion is added to your score.
 * When all rounds are cleared, remaining lives are added to your score.
@@ -65,6 +72,7 @@ Deep appreciation to all creators.
 * Autumn Background "Autumn Tileset for RPGs" by knunery
 * Winter Background "Snow Texture" by Downdate
 * Title Buttons "Blue Button Set" by Haven
+* Tornaod "Whirlwind - Arne16" by zwonky
 
 ----------------------------------------------------------------------------------------
 KIRU KAKOU - Phaser 3 game for web browser
@@ -92,6 +100,9 @@ KIRU KAKOU - Phaser 3 game for web browser
 * 面ごとに設定されたマナのノルマを集めればラウンドクリア
 　友を一気に多数囲うと獲得マナに倍率が掛かってラウンドクリアしやすくなる
 　ラウンドクリア時点の残り時間が得点に加算される
+* 面の開始時および大きく囲った時にアイテムの位置がヒントとして表示される。
+　狭く囲うとアイテムが登場する。斬る動作でアイテムの効果を発動できる。
+　S:スコア加算、T:残り時間加算、P:暴風（敵を左に、友を右に、押し分ける）
 * 全てのラウンドをクリアすると、残っているライフが得点に加算される
 
 ---
@@ -139,3 +150,4 @@ https://opengameart.org/
 * 秋背景「Autumn Tileset for RPGs」by knunery
 * 冬背景「Snow Texture」by Downdate
 * タイトルボタン「Blue Button Set」 by Haven
+* 竜巻 「Whirlwind - Arne16」 by zwonky
