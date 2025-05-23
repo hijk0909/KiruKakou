@@ -37,6 +37,7 @@ export class Effect {
         this.emitter = null;
         this.param1 = 0;
         this.sprites = [];
+        this.glows = [];
     }
 
     setType(type, pos) {
@@ -131,6 +132,10 @@ export class Effect {
             for (let i=0;i<MAX_TORNADO;i++){
                 this.sprites[i] = this.scene.add.sprite(pos.x, pos.y, 'tornado')
                 this.sprites[i].play('tornado_anims');
+                this.glows[i] = this.scene.add.sprite(pos.x, pos.y, 'tornado')
+                this.glows[i].setBlendMode(Phaser.BlendModes.ADD);
+                this.glows[i].setTint(0xffffff);
+                this.glows[i].play('tornado_anims');
             }
         }
     }
@@ -144,7 +149,9 @@ export class Effect {
         this.textObject = this.scene.add.text(this.pos.x, this.pos.y, this.text, {
             fontFamily: 'Helvetica, Arial',
             fontSize: '28px',
-            color: '#ffeedd'
+            color: '#ffeedd',
+            stroke: '#ff0000',
+            strokeThickness: 2
         }).setOrigin(0.5, 0.5);
     }
 
@@ -185,7 +192,6 @@ export class Effect {
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_TEXT) {
-            this.pos.y -= 0.25;
             this.counter -= 1;
             if (this.counter <= 0){
                 this.alive = false;
@@ -216,10 +222,14 @@ export class Effect {
             const at = c*11;
             for (let i=0;i<MAX_TORNADO;i++){
                 const sp = this.sprites[i];
+                const gl = this.glows[i];
                 const ai = i * Math.PI * 2 / MAX_TORNADO;
                 sp.setPosition(this.pos.x + r*Math.sin(ai+at), this.pos.y + r*Math.cos(ai+at)/2);
                 sp.setScale(1.0+c*11);
                 sp.setAlpha(1-c);
+                gl.setPosition(this.pos.x + r*Math.sin(ai+at), this.pos.y + r*Math.cos(ai+at)/2);
+                gl.setScale(1.0+c*11);
+                gl.setAlpha((0.3 * Math.cos(Math.PI * c * 13) + 0.3)*(1-c));
             }
             if ( this .counter <= 0){
                 this.alive = false;
@@ -227,8 +237,12 @@ export class Effect {
                     if (this.sprites[i]){
                         this.sprites[i].destroy();
                     }
+                    if (this.glows[i]){
+                        this.glows[i].destroy();
+                    }
                 }
                 this.sprites = [];
+                this.glows = [];
             }
         }
 
@@ -264,7 +278,14 @@ export class Effect {
             graphics.lineStyle(4, 0xffff00, a);
             draw_star(graphics, this.pos, r);
         } else if (this.type === EFF_TYPE_TEXT) {
-            this.textObject.setPosition(this.pos.x, this.pos.y);
+            const t = EFF_PERIOD_TEXT - this.counter;
+            this.textObject.setPosition(this.pos.x, getBouncingY(t, this.pos.y, 30, 80));
+            const dur = 20;
+            if ( this.counter < dur ){
+                const r = dur - this.counter;
+                this.textObject.setScale(1 + r/dur);
+                this.textObject.setAlpha(this.counter/dur);
+            }
         } else if (this.type === EFF_TYPE_CROSS) {
             graphics.lineStyle(1, 0xffffff, 0.9);
             graphics.beginPath();
@@ -314,4 +335,29 @@ function move_to(pos, target, v){
     distance = Math.sqrt((target.x - pos.x) * (target.x - pos.x) + (target.y - pos.y) * (target.y - pos.y));
 
     return distance
+}
+
+function getBouncingY(t, Y0, DY, T) {
+    if (t >= T) return Y0;
+
+    let timePassed = 0;
+    let duration = T / 2;
+    let height = DY;
+    let cycle = 0;
+
+    // 各バウンドのフェーズを探す
+    while (t > timePassed + duration) {
+        timePassed += duration;
+        duration /= 2;
+        height /= 2;
+        cycle++;
+    }
+
+    // 現在のバウンド内での進行度（0～1）
+    let localT = (t - timePassed) / duration;
+
+    // 放物線を描く： y = -4h * (x - 0.5)^2 + h
+    let offset = -4 * height * Math.pow(localT - 0.5, 2) + height;
+
+    return Y0 - offset;
 }

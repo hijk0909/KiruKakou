@@ -10,7 +10,7 @@ export class TitleScreen extends Phaser.Scene {
         const cy = this.game.canvas.height / 2;
         this.add.text(cx, cy - 50, 'KIRU KAKOU', { fontSize: '64px', fill: '#ffee00' , stroke: '#ff0000', strokeThickness: 2}).setOrigin(0.5,0.5);
         this.add.text(cx, cy + 215, 'Copyright ©2025 Current Color Co. Ltd. All rights reserved.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
-        this.add.text(cx, cy + 240, 'Version 1.2 2025.5.22.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
+        this.add.text(cx, cy + 240, 'Version 1.3 2025.5.23.', { fontSize: '18px', fill: '#888' }).setOrigin(0.5,0.5);
         this.stageText = this.add.text(cx, cy + 150, 'STAGE：1',{ fontSize: '24px', fill: '#eee' }).setOrigin(0.5,0.5);
 
         const btn_play = this.add.image(cx, cy + 60, 'btn_play')

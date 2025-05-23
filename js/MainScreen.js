@@ -24,6 +24,8 @@ const PATH_MIN_LOOPAREA = 200;
 const INTERSEC_MERGE_THRESHOLD =5; //近接する交差点を同一視する
 const AREA_THRESHOLD = 10;  //小さすぎるループは交差として無視する
 const PATH_MIN_DISTANCE =5; //軌跡に点を追加する時に最低限必要な距離
+const SEMILOOP_DISTANCE = 20; //見なしループ用の近接判定
+const SEMILOOP_INDEX_GAP = 10; //見なしループ用の必要点数
 
 const TIMER_SCORE_RATIO = 100;
 const LIVE_BONUS = 10000;
@@ -208,10 +210,19 @@ export class MainScreen extends Phaser.Scene {
         this.intersections = mergeCloseIntersections(is1, INTERSEC_MERGE_THRESHOLD);
         const intersections = this.intersections
         this.pathLength = polylineLength(this.pathPoints);
+        // 交差数1 の場合、囲み成立
         if (intersections.length === 1){
             this.loop = extractLoop(this.pathPoints, intersections[0].i1, intersections[0].i2, intersections[0].point);
             this.loopArea = Math.abs(polygonArea(this.loop));
             // console.log(`loopArea: ${this.loopArea}`)
+        }
+        // 交差数0 の場合、見なし囲いの判定
+        if (intersections.length === 0){
+            this.loop = extractSemiLoop(this.pathPoints);
+            if (this.loop != null){
+                this.loopArea = Math.abs(polygonArea(this.loop));
+                this.intersections.push({ i1: 0, i2: 0, point: this.loop[0] });
+            }
         }
     
         if (intersections.length === 0 && this.pathLength > PATH_MIN_LENGTH) {
@@ -262,6 +273,7 @@ export class MainScreen extends Phaser.Scene {
             this.pathGraphics.strokePoints(this.pathPoints, false);
             this.pathCounter = PATH_COUNTER_FAILED;
             if (intersections.length > 1){
+                // 交差数２以上（時間停止成立）
                 for (const isp of intersections) {
                     let eff = new Effect(this);
                     eff.setType(EFF_TYPE_CROSS, new Phaser.Math.Vector2(isp.point.x, isp.point.y));
@@ -270,6 +282,7 @@ export class MainScreen extends Phaser.Scene {
                 this.sound.play('se_stop');
                 GameState.stopMode = true;
             } else {
+                // 不成立
                 this.sound.play('se_path_fail');
                 GameState.stopMode = false;
             }
@@ -512,6 +525,12 @@ export class MainScreen extends Phaser.Scene {
                             eff.setType(EFF_TYPE_TORNADO, new Phaser.Math.Vector2(item.pos.x, item.pos.y));
                             this.effects.push(eff);
                             this.sound.play('se_tornado');
+                            // 軌跡を即時キャンセル
+                            this.pathCounter = 0;
+                            this.pathGraphics.clear();
+                            this.areaGraphics.clear();
+                            this.ui.clearNG();
+                            this.pathState = PATH_STATE_NONE;
                         }
                         item.destroy();
                     }
@@ -878,6 +897,7 @@ function segmentsIntersectionPoint(p1, p2, q1, q2) {
     return null;
 }
 
+// 交差が1の場合にループを抽出する
 function extractLoop(points, i1, i2, intersection) {
     const loop = [];
     loop.push(intersection); // 交点からスタート
@@ -887,6 +907,56 @@ function extractLoop(points, i1, i2, intersection) {
     loop.push(intersection); // 交点に戻る
     return loop;
 }
+
+// 交差が0の場合に見なしループを抽出する
+function extractSemiLoop(pathPoints) {
+    if (pathPoints.length < SEMILOOP_INDEX_GAP + 2) return null;
+
+    const p1 = pathPoints[0];
+    const p2 = pathPoints[pathPoints.length - 1];
+
+    // 始点と終点が近い場合
+    if (p1.distance(p2) < SEMILOOP_DISTANCE) {
+        return [...pathPoints, p1.clone()];
+    }
+
+    // 始点に最も近い点（SEMILOOP_INDEX_GAP 以降）
+    let minDist2 = Infinity;
+    let minIndex2 = -1;
+    for (let i = SEMILOOP_INDEX_GAP; i < pathPoints.length; i++) {
+        const d = p1.distance(pathPoints[i]);
+        if (d < minDist2) {
+            minDist2 = d;
+            minIndex2 = i;
+        }
+    }
+    if (minDist2 < SEMILOOP_DISTANCE) {
+        const loop = pathPoints.slice(0, minIndex2 + 1);
+        loop.push(p1.clone());
+        return loop;
+    }
+
+    // 終点に最も近い点（MIN_INDEX_GAP より前まで）
+    minDist2 = Infinity;
+    minIndex2 = -1;
+    for (let i = 0; i < pathPoints.length - SEMILOOP_INDEX_GAP; i++) {
+        const d = p2.distance(pathPoints[i]);
+        if (d < minDist2) {
+            minDist2 = d;
+            minIndex2 = i;
+        }
+    }
+    if (minDist2 < SEMILOOP_DISTANCE) {
+        const loop = pathPoints.slice(minIndex2, pathPoints.length);
+        loop.push(pathPoints[minIndex2].clone());
+        return loop;
+    }
+
+    // 条件に合致するループは存在しない
+    return null;
+}
+
+
 
 function mergeCloseIntersections(intersections, threshold) {
     const merged = [];
