@@ -1,6 +1,6 @@
 // MainScreen.js
 import { Character, CH_TYPE_ENEMY, CH_TYPE_FRIEND } from './Character.js';
-import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_TEXT, EFF_TYPE_CROSS, EFF_TYPE_MANA, EFF_TYPE_TORNADO } from './Effect.js';
+import { Effect, EFF_TYPE_ENEMY_GET, EFF_TYPE_FRIEND_GET, EFF_TYPE_KILL, EFF_TYPE_HIT, EFF_TYPE_TEXT, EFF_TYPE_CROSS, EFF_TYPE_MANA, EFF_TYPE_TORNADO, EFF_TYPE_FLOWER } from './Effect.js';
 import { Item, ITEM_TYPE_P, ITEM_TYPE_S, ITEM_TYPE_T, ITEM_STATE_HINT, ITEM_STATE_HIDDEN, ITEM_STATE_APPEAR} from './Item.js';
 import { GameState } from './GameState.js';
 
@@ -155,6 +155,8 @@ export class MainScreen extends Phaser.Scene {
 
         this.start_round();
         this.set_items();
+
+        GameState.tornadeMode = false;
 
     } // End of create()
 
@@ -356,15 +358,42 @@ export class MainScreen extends Phaser.Scene {
         if (this.gameState === GAME_STATE_BEGIN){
 
             // 【GAME_STATE】ステージ開始
+
+            this.gameStateCounter += 1;
+            if (this.season === 0){
+                if (this.gameStateCounter === 1){
+                    this.set_flower(65,8);
+                } else if (this.gameStateCounter === 22){
+                    this.set_flower(130,16);
+                } else if (this.gameStateCounter === 44){
+                    this.set_flower(195,24);
+                } else if (this.gameStateCounter === 66){
+                    this.set_flower(260,32);
+                }
+            }
+
+            // エフェクトの処理（逆順で）
+            for (let i = this.effects.length - 1; i >= 0; i--) {
+                const eff = this.effects[i];
+                eff.move();
+                if (!eff.isAlive()) {
+                    this.effects.splice(i, 1);
+                }
+            } // End of for(eff)
+
+            // 背景の再描画
+            this.redraw_bg(this.season, delta);
+
+            // ジングルが鳴りやんだら GAME_STATE_PLAY へ
             if (!this.jingle.isPlaying){
                 this.gameState = GAME_STATE_PLAY;
+                this.gameStateCounter = 0;
                 this.ui.stageBeginText.setVisible(false);
                 this.bgm = this.sound.add('bgm_main', { loop: true });
                 this.bgm.play();
                 this.bgm.setVolume(0.5);
             }
-            // 背景の再描画
-            this.redraw_bg(this.season, delta);
+
         } else if (this.gameState === GAME_STATE_PLAY){
 
             // 【GAME_STATE】プレイ中
@@ -453,6 +482,7 @@ export class MainScreen extends Phaser.Scene {
                     // 作成途中で敵機に触れられた処理（ミス）
                     const type = ch.get_type();
                     if ( type === CH_TYPE_ENEMY){
+                        ch.showCollision();
                         this.gameState = GAME_STATE_FAILED;
                         this.bgm.stop();
                         this.jingle = this.sound.add('j_round_failed');
@@ -788,7 +818,53 @@ export class MainScreen extends Phaser.Scene {
        } else if (season === 3){
             this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'bg_winter').setOrigin(0);
             this.bg.setTint(0xcccccc);
-       }
+
+            const particles0 = this.add.particles('snow_0').setDepth(5);;
+            const emitter0 = particles0.createEmitter({
+                x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
+                y: 0,
+                lifespan: 8000,                 // 長めに存在
+                speedY: { min: 50, max: 60 },   // ゆっくり落ちる
+                speedX: { min: -20, max: 20 },  // 横に揺れる動き
+                scale: { start: 0.6, end: 0.3 },// 少し縮みながら落ちる
+                alpha: { start: 0.3, end: 0.2 },  // フェードアウト
+                angle: { min: -10, max: 10 },   // 角度にバリエーション
+                gravityY: 10,                   // ゆるやかに引っ張られる
+                frequency: 400,                 // 0.2秒ごとに発生
+                blendMode: 'ADD'                // 発光感（必要なければ 'NORMAL'）
+            });
+
+            const particles1 = this.add.particles('snow_1').setDepth(4);;
+            const emitter1 = particles1.createEmitter({
+                x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
+                y: 0,
+                lifespan: 16000,                 // 長めに存在
+                speedY: { min: 25, max: 30 },   // ゆっくり落ちる
+                speedX: { min: -10, max: 10 },  // 横に揺れる動き
+                scale: { start: 0.4, end: 0.2 },// 少し縮みながら落ちる
+                alpha: { start: 0.2, end: 0.1 },  // フェードアウト
+                angle: { min: -10, max: 10 },   // 角度にバリエーション
+                gravityY: 8,                   // ゆるやかに引っ張られる
+                frequency: 200,                 // 0.2秒ごとに発生
+                blendMode: 'ADD'                // 発光感（必要なければ 'NORMAL'）
+            });
+
+            const particles2 = this.add.particles('snow_2').setDepth(4);;
+            const emitter2 = particles2.createEmitter({
+                x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
+                y: 0,
+                lifespan: 32000,                 // 長めに存在
+                speedY: { min: 12, max: 15 },   // ゆっくり落ちる
+                speedX: { min: -5, max: 5 },  // 横に揺れる動き
+                scale: { start: 0.2, end: 0.1 },// 少し縮みながら落ちる
+                alpha: { start: 0.1, end: 0.05 },  // フェードアウト
+                angle: { min: -10, max: 10 },   // 角度にバリエーション
+                gravityY: 6,                   // ゆるやかに引っ張られる
+                frequency: 100,                 // 0.2秒ごとに発生
+                blendMode: 'ADD'                // 発光感（必要なければ 'NORMAL'）
+            });
+
+        }
     }
     redraw_bg(season, delta){
         if (season === 1){
@@ -839,8 +915,24 @@ export class MainScreen extends Phaser.Scene {
         });
     }
 
+    // 花の配置
+    set_flower(r,num){
+        const cy = this.game.canvas.height / 2;
+        const cx = this.game.canvas.width / 2;
+
+        for (let i=0; i<num;i++){
+            const ai = i * Math.PI * 2 / num;
+            let eff = new Effect(this);
+            const x = cx + r * Math.sin(ai);
+            const y = cy + r * Math.cos(ai);
+            eff.setType(EFF_TYPE_FLOWER, new Phaser.Math.Vector2(x, y));
+            this.effects.push(eff);
+        }
+    }
+
     // アイテムの初期配置
     set_items(){
+        // アイテムの出現確率比
         const rs = 3;
         const rt = 3;
         const rp = 2;
@@ -908,7 +1000,7 @@ function extractLoop(points, i1, i2, intersection) {
     return loop;
 }
 
-// 交差が0の場合に見なしループを抽出する
+// 交差が0の場合に「見なしループ」を抽出する
 function extractSemiLoop(pathPoints) {
     if (pathPoints.length < SEMILOOP_INDEX_GAP + 2) return null;
 
@@ -973,62 +1065,62 @@ function mergeCloseIntersections(intersections, threshold) {
     return merged;
 }
 
-    function polygonArea(points) {
-        let area = 0;
-        for (let i = 0; i < points.length - 1; i++) {
-            area += (points[i].x * points[i + 1].y - points[i + 1].x * points[i].y);
-        }
-        return area / 2;
+function polygonArea(points) {
+     let area = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        area += (points[i].x * points[i + 1].y - points[i + 1].x * points[i].y);
     }
+    return area / 2;
+}
 
-    function polylineLength(points) {
-        let length = 0;
-        for (let i = 0; i < points.length - 1; i++) {
-            const dx = points[i + 1].x - points[i].x;
-            const dy = points[i + 1].y - points[i].y;
-            length += Math.sqrt(dx * dx + dy * dy);
-        }
-        return length;
+function polylineLength(points) {
+    let length = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        const dx = points[i + 1].x - points[i].x;
+        const dy = points[i + 1].y - points[i].y;
+        length += Math.sqrt(dx * dx + dy * dy);
     }
+    return length;
+}
 
-    function pathIntersectsRect(pathPoints, rect) {
-        for (let i = 0; i < pathPoints.length - 1; i++) {
-            const p1 = pathPoints[i];
-            const p2 = pathPoints[i + 1];
-            if (Phaser.Geom.Intersects.LineToRectangle(
-                new Phaser.Geom.Line(p1.x, p1.y, p2.x, p2.y), rect)) {
-                return true;
-            }
+function pathIntersectsRect(pathPoints, rect) {
+    for (let i = 0; i < pathPoints.length - 1; i++) {
+        const p1 = pathPoints[i];
+        const p2 = pathPoints[i + 1];
+        if (Phaser.Geom.Intersects.LineToRectangle(
+            new Phaser.Geom.Line(p1.x, p1.y, p2.x, p2.y), rect)) {
+            return true;
         }
-        return false;
     }
+    return false;
+}
 
-    function polygonIntersectsRect(polygonPoints, rect) {
-        const polygon = new Phaser.Geom.Polygon(polygonPoints);
-        // 矩形の4隅のうちどれかがポリゴン内部にあるか
-        const corners = [
-            new Phaser.Geom.Point(rect.x, rect.y),
-            new Phaser.Geom.Point(rect.x + rect.width, rect.y),
-            new Phaser.Geom.Point(rect.x + rect.width, rect.y + rect.height),
-            new Phaser.Geom.Point(rect.x, rect.y + rect.height)
-        ];
-        for (const corner of corners) {
-            if (Phaser.Geom.Polygon.Contains(polygon, corner.x, corner.y)) {
-                return true;
-            }
+function polygonIntersectsRect(polygonPoints, rect) {
+    const polygon = new Phaser.Geom.Polygon(polygonPoints);
+    // 矩形の4隅のうちどれかがポリゴン内部にあるか
+    const corners = [
+        new Phaser.Geom.Point(rect.x, rect.y),
+        new Phaser.Geom.Point(rect.x + rect.width, rect.y),
+        new Phaser.Geom.Point(rect.x + rect.width, rect.y + rect.height),
+        new Phaser.Geom.Point(rect.x, rect.y + rect.height)
+    ];
+    for (const corner of corners) {
+        if (Phaser.Geom.Polygon.Contains(polygon, corner.x, corner.y)) {
+            return true;
         }
-        // ポリゴンの頂点のうちどれかが矩形内部にあるか
-        for (const p of polygonPoints) {
-            if (Phaser.Geom.Rectangle.ContainsPoint(rect, p)) {
-                return true;
-           }
-        }
-        // ポリゴンの辺と矩形の辺が交差しているか
-        for (let i = 0; i < polygonPoints.length - 1; i++) {
-            const line = new Phaser.Geom.Line(polygonPoints[i].x, polygonPoints[i].y, polygonPoints[i + 1].x, polygonPoints[i + 1].y);
-            if (Phaser.Geom.Intersects.LineToRectangle(line, rect)) {
-                return true;
-            }
-        }
-        return false;
     }
+    // ポリゴンの頂点のうちどれかが矩形内部にあるか
+    for (const p of polygonPoints) {
+        if (Phaser.Geom.Rectangle.ContainsPoint(rect, p)) {
+            return true;
+        }
+    }
+    // ポリゴンの辺と矩形の辺が交差しているか
+    for (let i = 0; i < polygonPoints.length - 1; i++) {
+        const line = new Phaser.Geom.Line(polygonPoints[i].x, polygonPoints[i].y, polygonPoints[i + 1].x, polygonPoints[i + 1].y);
+        if (Phaser.Geom.Intersects.LineToRectangle(line, rect)) {
+            return true;
+        }
+    }
+    return false;
+}

@@ -32,13 +32,13 @@ export class Item {
     setState(state) {
         if (state == ITEM_STATE_HINT){
             if ( this.hint == null){
-                this.hint = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_0');
+                this.hint = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_0').setDepth(1);
             }
             this.scene.tweens.add({
                 targets: this.hint,
                 alpha: 0,
                 yoyo: true,
-                repeat: 6, // 点滅の回数
+                repeat: 8, // 点滅の回数
                 duration: 200, // 点滅1回あたりの時間（ミリ秒）
                 onComplete: () => {
                     // 点滅終了後に情報隊更新
@@ -52,14 +52,14 @@ export class Item {
             this.hint.setVisible(false);
         } else if (state == ITEM_STATE_APPEAR){
             if (this.type == ITEM_TYPE_P){
-                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_p');
-                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_p');
+                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_p').setDepth(1);
+                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_p').setDepth(2);
             } else if (this.type == ITEM_TYPE_S){
-                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_s');
-                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_s');
+                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_s').setDepth(1);
+                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_s').setDepth(2);
             } else if (this.type == ITEM_TYPE_T){
-                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_t');                
-                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_t');    
+                this.sprite = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_t').setDepth(1);     
+                this.glow = this.scene.add.sprite(this.pos.x, this.pos.y, 'item_t').setDepth(2);
             }
             this.glow.setBlendMode(Phaser.BlendModes.ADD);
             this.glow.setTint(0xffffff);

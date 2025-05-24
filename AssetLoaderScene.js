@@ -71,7 +71,17 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.image('item_0', 'assets/images/icons/item_0.png');
         this.load.image('item_p', 'assets/images/icons/item_p.png');
         this.load.image('item_s', 'assets/images/icons/item_s.png');
-        this.load.image('item_t', 'assets/images/icons/item_t.png');        
+        this.load.image('item_t', 'assets/images/icons/item_t.png');
+
+        this.load.image('flower_0', 'assets/images/icons/flower_0.png');
+        this.load.image('flower_1', 'assets/images/icons/flower_1.png');
+        this.load.image('flower_2', 'assets/images/icons/flower_2.png');
+        this.load.image('flower_3', 'assets/images/icons/flower_3.png');
+        this.load.image('flower_4', 'assets/images/icons/flower_4.png');
+
+        this.load.image('snow_0', 'assets/images/icons/snow_0.png');
+        this.load.image('snow_1', 'assets/images/icons/snow_1.png');
+        this.load.image('snow_2', 'assets/images/icons/snow_2.png');
 
         this.load.spritesheet('tornado', 'assets/images/icons/tornado.png', {
             frameWidth: 16, frameHeight: 16 });

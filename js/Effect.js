@@ -11,6 +11,7 @@ export const EFF_TYPE_CROSS = 5;
 export const EFF_TYPE_SPARK = 6;
 export const EFF_TYPE_MANA = 7;
 export const EFF_TYPE_TORNADO = 8;
+export const EFF_TYPE_FLOWER = 9;
 
 const ENERGY_DOWN_UNIT = 100;
 const ENERGY_UP_UNIT = 5;
@@ -22,6 +23,7 @@ const EFF_PERIOD_CROSS = 40;
 const EFF_PERIOD_SPARK = 120;
 const EFF_PERIOD_MANA = 180;
 const EFF_PERIOD_TORNADO = 180;
+const EFF_PERIOD_FLOWER = 90;
 
 const MAX_TORNADO = 10;
 
@@ -36,6 +38,7 @@ export class Effect {
         this.textObject = null;
         this.emitter = null;
         this.param1 = 0;
+        this.sprite = null;
         this.sprites = [];
         this.glows = [];
     }
@@ -137,6 +140,10 @@ export class Effect {
                 this.glows[i].setTint(0xffffff);
                 this.glows[i].play('tornado_anims');
             }
+        } else if (this.type == EFF_TYPE_FLOWER){
+            this.counter = EFF_PERIOD_FLOWER;
+            let fl = Math.floor(Math.random() * 5);
+            this.sprite = this.scene.add.sprite(pos.x, pos.y, `flower_${fl}`).setDepth(0);
         }
     }
 
@@ -219,11 +226,11 @@ export class Effect {
             this.counter -= 1;
             const c = (EFF_PERIOD_TORNADO - this.counter) / EFF_PERIOD_TORNADO;
             const r = 280*c;
-            const at = c*11;
+            const at = c*11; //回転速度
             for (let i=0;i<MAX_TORNADO;i++){
                 const sp = this.sprites[i];
                 const gl = this.glows[i];
-                const ai = i * Math.PI * 2 / MAX_TORNADO;
+                const ai = i * Math.PI * 2 / MAX_TORNADO; //竜巻の位置
                 sp.setPosition(this.pos.x + r*Math.sin(ai+at), this.pos.y + r*Math.cos(ai+at)/2);
                 sp.setScale(1.0+c*11);
                 sp.setAlpha(1-c);
@@ -243,6 +250,19 @@ export class Effect {
                 }
                 this.sprites = [];
                 this.glows = [];
+            }
+        } else if (this.type === EFF_TYPE_FLOWER) {
+            this.counter -= 1;
+            const cnt = this.counter;
+            this.sprite.setAngle(cnt);
+            const c_a = EFF_PERIOD_FLOWER * 0.2;
+            if ( cnt < c_a ){
+                this.sprite.setAlpha(cnt / c_a);
+            }
+            if ( cnt <= 0 ){
+                this.alive = false;
+                this.sprite.destroy();
+                this.sprite = null;
             }
         }
 

@@ -29,6 +29,7 @@ export class Character {
         this.moveParam2 = 0;
         this.moveState = 0;
         this.moveCounter = 0;
+        this.drawCollision = false;
     }
 
     setType(type, pos) {
@@ -107,6 +108,11 @@ export class Character {
             this.destroy();
         }
     }
+
+    showCollision() {
+        this.drawCollision = true;
+    }
+
 
     move() {
 
@@ -193,7 +199,7 @@ export class Character {
 
     draw(graphics) {
         this.graphics.clear();
-        if ( GameState.stopMode ){
+        if ( GameState.stopMode || this.drawCollision){
             if (this.type === CH_TYPE_ENEMY) {
                 this.graphics.lineStyle(2, 0xff0000);
             } else if (this.type === CH_TYPE_FRIEND) {
