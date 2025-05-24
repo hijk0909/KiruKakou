@@ -73,6 +73,7 @@ Deep appreciation to all creators.
 * Winter Background "Snow Texture" by Downdate
 * Title Buttons "Blue Button Set" by Haven
 * Tornaod "Whirlwind - Arne16" by zwonky
+* Flower "Generated Flowers" by Harunatsuko
 
 ----------------------------------------------------------------------------------------
 KIRU KAKOU - Phaser 3 game for web browser
@@ -151,3 +152,4 @@ https://opengameart.org/
 * 冬背景「Snow Texture」by Downdate
 * タイトルボタン「Blue Button Set」 by Haven
 * 竜巻 「Whirlwind - Arne16」 by zwonky
+* 花 「Generated Flowers」 by Harunatsuko
