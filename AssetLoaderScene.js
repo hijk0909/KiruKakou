@@ -86,6 +86,10 @@ export class AssetLoaderScene extends Phaser.Scene {
         this.load.spritesheet('tornado', 'assets/images/icons/tornado.png', {
             frameWidth: 16, frameHeight: 16 });
 
+        this.load.image('op_1', 'assets/images/op_1.png');
+        this.load.image('op_2', 'assets/images/op_2.png');
+        this.load.image('op_3', 'assets/images/op_3.png');
+
         this.load.json('stage_data', 'assets/data/stage.json');
     }
 
