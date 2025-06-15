@@ -1,5 +1,7 @@
 // GameState.js
 export const GameState = {
+    ff: 1,
+    fps: 60,
     lives: 3,
     stage: 1,
     score: 0,

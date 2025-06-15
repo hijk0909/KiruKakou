@@ -29,8 +29,8 @@ export class GameClearScreen extends Phaser.Scene {
         graphics.fillRect(0, 0, 8, 8);
         graphics.generateTexture('confetti', 8, 8);
 
-        this.particles = this.add.particles('confetti');
-        this.confettiEmitter = this.particles.createEmitter({
+        // this.particles = this.add.particles('confetti');
+        this.confettiEmitter = this.add.particles(0,0,'confetti',{
             x: { min: 0, max: this.scale.width },
             y: 0,
             lifespan: 4000,

@@ -131,24 +131,24 @@ export class Character {
         } else if (GameState.tornadeMode){
             if (this.type === CH_TYPE_ENEMY){
                 if (this.pos.x > 10 ){
-                    this.pos.x -= 5;
+                    this.pos.x -= 5 * GameState.ff;
                 } else {
-                    this.pos.x += 1;
+                    this.pos.x += 1 * GameState.ff;
                 }
                 this.sprite.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET);
                 this.sprite_shadow.setPosition(this.pos.x, this.pos.y + ENEMY_OFFSET + SHADOW_OFFSET);
             } else if (this.type === CH_TYPE_FRIEND){
                 if (this.pos.x < width - 10){
-                    this.pos.x += 5;
+                    this.pos.x += 5 * GameState.ff;
                 } else {
-                    this.pos.x -= 1;
+                    this.pos.x -= 1 * GameState.ff;
                 }
                 this.sprite.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET);
                 this.sprite_shadow.setPosition(this.pos.x, this.pos.y + FRIEND_OFFSET + SHADOW_OFFSET);
             }
         }
 
-        if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
+        if (this.pos.x < -5 * GameState.ff || this.pos.x > width + 5 * GameState.ff || this.pos.y < 0 || this.pos.y > height) {
             this.alive = false;
                 this.destroy();
         }
@@ -157,37 +157,37 @@ export class Character {
     move_dir(dx){
         if (this.movePattern === 0){
             // move straight
-            this.pos.x = this.pos.x + this.speed * dx;
+            this.pos.x = this.pos.x + this.speed * dx * GameState.ff;
         } else if (this.movePattern === 1){
             // move diagonal
             const h = this.scene.game.canvas.height;
             const vm = GameState.verticalMargin;
-            this.pos.x = this.pos.x + this.speed * dx;
-            this.pos.y += this.moveParam1;
+            this.pos.x += this.speed * dx * GameState.ff;
+            this.pos.y += this.moveParam1 * GameState.ff;
             if (this.pos.y > h -vm || this.pos.y < vm){
                 this.moveParam1 *= -1; //Y軸移動方向を反転
             }
         } else if (this.movePattern === 2){
             // move crawl
             if (this.moveState === 0){
-                //加速
-                this.pos.x += this.moveCounter * dx;
-                this.moveCounter += this.moveParam1;
-                if (this.moveCounter >= this.speed){
+                //0.加速
+                this.pos.x += (this.moveCounter * GameState.ff + 0.5 * this.moveParam1 * GameState.ff * GameState.ff)*dx;
+                this.moveCounter += this.moveParam1 * GameState.ff; //加速
+                if (this.moveCounter >= this.speed){ //速度が上限以上になった
                     this.moveCounter = this.speed;
                     this.moveState = 1;
                 }
 
             } else if (this.moveState === 1){
-                //減速
-                this.pos.x += this.moveCounter * dx;
-                this.moveCounter -= this.moveParam1;
-                if (this.moveCounter <= 0){
+                //1.減速
+                this.pos.x += (this.moveCounter * GameState.ff - 0.5 * this.moveParam1 * GameState.ff * GameState.ff)*dx;
+                this.moveCounter -= this.moveParam1 * GameState.ff; //減速
+                if (this.moveCounter <= 0){ //速度が下限以下になった
                     this.moveCounter = this.moveParam2;
                     this.moveState = 2;
                 }
             } else if (this.moveState === 2){
-                //停止
+                //3.停止
                 this.moveCounter -= 1;
                 if (this.moveCounter <= 0){
                     this.moveCounter = 0.0;

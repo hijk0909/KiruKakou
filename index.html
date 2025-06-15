@@ -34,9 +34,9 @@
 </head>
 <body>
     <div id="game-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
     <script type="module">
-        window.addEventListener('DOMContentLoaded', async () => {
-            const Phaser = (await import('https://cdn.jsdelivr.net/npm/phaser@3.55.2/+esm')).default;
+        window.addEventListener('DOMContentLoaded', async () => {   
             const { AssetLoaderScene } = await import('./AssetLoaderScene.js');
             const { TitleScreen } = await import('./js/TitleScreen.js');
             const { MainScreen } = await import('./js/MainScreen.js');
@@ -55,6 +55,7 @@
                     height: GAME_HEIGHT,
                     parent: 'game-container',
                 },
+                // fps: {limit:15}, // [DEBUG]
                 backgroundColor: '#000000',
                 scene: [AssetLoaderScene, TitleScreen, MainScreen, UIScene, GameOverScreen, GameClearScreen]
             };

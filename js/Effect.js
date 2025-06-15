@@ -57,7 +57,7 @@ export class Effect {
             this.counter = EFF_PERIOD_CROSS;
         } else if (this.type == EFF_TYPE_SPARK){
             this.counter = EFF_PERIOD_SPARK;
-            if ( !this.scene.starParticles ) {
+            if ( !this.scene.textures.exists('star')){
                 let graphics = this.scene.add.graphics();
                 graphics.fillStyle(0xffe000, 1);
                 graphics.beginPath();
@@ -77,23 +77,23 @@ export class Effect {
                 graphics.fillPath();
                 graphics.generateTexture('star', 40, 40);
                 graphics.destroy();
-                this.scene.starParticles = this.scene.add.particles('star');
             }
-            this.emitter = this.scene.starParticles.createEmitter({
-                x: pos.x,
-                y: pos.y,
+            this.emitter = this.scene.add.particles(0, 0, 'star', {
+                // x: pos.x,
+                // y: pos.y,
                 speed: { min: -200, max: 200 },
                 scale: { start: 1, end: 0 },
                 alpha: { start: 1, end: 0 },
                 lifespan: 1000,
                 blendMode: 'ADD',
-                quantity: 30 // 一度に何個放出するか
+                gravityY: 200
+                // quantity: 30 // 一度に何個放出するか
             });
             this.emitter.explode(30, pos.x, pos.y); 
-            this.emitter.setGravityY(200);
+            // this.emitter.setGravityY(200);
         } else if (this.type == EFF_TYPE_MANA){
             this.counter = EFF_PERIOD_MANA;
-            if ( !this.scene.manaParticles ) {
+            if (!this.scene.textures.exists('mana')){
                 let graphics = this.scene.add.graphics();
                 graphics.fillStyle(0x60ff00, 1);
                 graphics.beginPath();
@@ -111,11 +111,10 @@ export class Effect {
                 graphics.fillPath();
                 graphics.generateTexture('mana', 40, 40);
                 graphics.destroy();
-                this.scene.manaParticles = this.scene.add.particles('mana');
             }
-            this.emitter = this.scene.manaParticles.createEmitter({
-                x: pos.x,
-                y: pos.y,
+            this.emitter = this.scene.add.particles(0, 0, 'mana',{
+                // x: pos.x,
+                // y: pos.y,
                 speed: { min: 160, max: 200 },
                 scale: { start: 1, end: 0.5 },
                 alpha: { start: 1, end: 0 },
@@ -173,14 +172,14 @@ export class Effect {
     move() {
         if (this.type === EFF_TYPE_ENEMY_GET) {
             let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
-            if (distance < 10){
+            if (distance < 10 * GameState.ff){
                 GameState.energy = Math.max( GameState.energy - ENERGY_DOWN_UNIT, 0);
                 this.scene.sound.play('se_mana_down');
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_FRIEND_GET) {
             let distance = move_to(this.pos, new Phaser.Math.Vector2(GameState.posEnergy, 10), 10);
-            if (distance < 10){
+            if (distance < 10 * GameState.ff){
                 GameState.energy = Math.min( GameState.energy + GameState.energyMultiple * ENERGY_UP_UNIT, GameState.maxEnergy);
                 GameState.energyMultiple += 1;
                 this.scene.sound.play('se_mana_up');
@@ -189,41 +188,45 @@ export class Effect {
                 this.setType(EFF_TYPE_SPARK, this.pos);
             }
         } else if (this.type === EFF_TYPE_KILL){
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if ( this.counter <= 0){
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_HIT) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if ( this.counter <= 0){
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_TEXT) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if (this.counter <= 0){
                 this.alive = false;
                 this.textObject.destroy();
                 this.textObject = null; 
             }
         } else if (this.type === EFF_TYPE_CROSS) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if ( this .counter <= 0){
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_SPARK) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if ( this .counter <= 0){
-                this.scene.starParticles.removeEmitter(this.emitter);
+                // this.scene.starParticles.removeEmitter(this.emitter);
+                this.emitter.destroy();
+                this.emitter = null;
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_MANA) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             if ( this.counter <= 0){
-                this.scene.manaParticles.removeEmitter(this.emitter);
+                // this.scene.manaParticles.removeEmitter(this.emitter);
+                this.emitter.destroy();
+                this.emitter = null;
                 this.alive = false;
             }
         } else if (this.type === EFF_TYPE_TORNADO) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             const c = (EFF_PERIOD_TORNADO - this.counter) / EFF_PERIOD_TORNADO;
             const r = 280*c;
             const at = c*11; //回転速度
@@ -252,7 +255,7 @@ export class Effect {
                 this.glows = [];
             }
         } else if (this.type === EFF_TYPE_FLOWER) {
-            this.counter -= 1;
+            this.counter -= 1 * GameState.ff;
             const cnt = this.counter;
             this.sprite.setAngle(cnt);
             const c_a = EFF_PERIOD_FLOWER * 0.2;
@@ -348,7 +351,7 @@ function move_to(pos, target, v){
 
     if (distance < 0.0001) return 0;
 
-    let ratio = v / distance;
+    let ratio = v / distance * GameState.ff;
     pos.x += dx * ratio;
     pos.y += dy * ratio;
 

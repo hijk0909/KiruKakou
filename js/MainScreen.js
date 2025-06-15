@@ -143,6 +143,7 @@ export class MainScreen extends Phaser.Scene {
 
         this.gameState = GAME_STATE_BEGIN;
         this.gameStateCounter = 0;
+        this.lastGameStateCounter = 0;
 
         this.bgFrame = 0;
         this.bgFrameTimer = 0;
@@ -355,22 +356,26 @@ export class MainScreen extends Phaser.Scene {
     }
 
     update(time, delta) {
+
+        GameState.ff = delta * GameState.fps / 1000;
+
         if (this.gameState === GAME_STATE_BEGIN){
 
             // 【GAME_STATE】ステージ開始
 
-            this.gameStateCounter += 1;
+            this.gameStateCounter += 1 * GameState.ff;
             if (this.season === 0){
-                if (this.gameStateCounter === 1){
+                if (this.gameStateCounter >= 1 && 1 > this.lastGameStateCounter){
                     this.set_flower(65,8);
-                } else if (this.gameStateCounter === 22){
+                } else if (this.gameStateCounter >= 22 && 22 > this.lastGameStateCounter){
                     this.set_flower(130,16);
-                } else if (this.gameStateCounter === 44){
+                } else if (this.gameStateCounter >= 44 && 44 > this.lastGameStateCounter){
                     this.set_flower(195,24);
-                } else if (this.gameStateCounter === 66){
+                } else if (this.gameStateCounter >= 66 && 66 > this.lastGameStateCounter){
                     this.set_flower(260,32);
                 }
             }
+            this.lastGameStateCounter = this.gameStateCounter;
 
             // エフェクトの処理（逆順で）
             for (let i = this.effects.length - 1; i >= 0; i--) {
@@ -398,7 +403,7 @@ export class MainScreen extends Phaser.Scene {
 
             // 【GAME_STATE】プレイ中
 
-            // タイマー減少
+            // ステージタイマーのカウントダウン
             GameState.timer = Math.max(GameState.timer - delta / 1000, 0);
             if ( GameState.timer < this.timer_alarm_counter){
                 this.timer_alarm_counter = Math.floor(GameState.timer);
@@ -407,6 +412,7 @@ export class MainScreen extends Phaser.Scene {
                 }
             }
 
+            // タイムオーバー
             if (GameState.timer === 0){
                 this.gameState = GAME_STATE_FAILED;
                 this.bgm.stop();
@@ -572,8 +578,8 @@ export class MainScreen extends Phaser.Scene {
 
             // 軌跡を一定期間、残存させる
             if ( this.pathCounter > 0){
-                this.pathCounter -= 1;
-                if ( this.pathCounter === 0 && this.pathState != PATH_STATE_MAKING){
+                this.pathCounter -= 1 * GameState.ff;
+                if ( this.pathCounter <= 0 && this.pathState != PATH_STATE_MAKING){
                     this.pathGraphics.clear();
                     this.areaGraphics.clear();
                     this.ui.clearNG();
@@ -584,7 +590,7 @@ export class MainScreen extends Phaser.Scene {
             // トルネードモード
             if ( GameState.tornadeMode ){
                 // console.log(`toradeCount:${GameState.tornadeCount}`);
-                GameState.tornadeCount -= 1;
+                GameState.tornadeCount -= 1 * GameState.ff;
                 if (GameState.tornadeCount <= 0){
                     GameState.tornadeMode = false;
                 }
@@ -629,8 +635,8 @@ export class MainScreen extends Phaser.Scene {
 
             // 残りタイムボーナス
             if ( GameState.timer > 0){
-                if ( GameState.timer > 1){
-                    GameState.timer -= 1;
+                if ( GameState.timer > 1 * GameState.ff){
+                    GameState.timer -= 1 * GameState.ff;
                     this.add_score(TIMER_SCORE_RATIO);
                 } else {
                     this.add_score(Math.floor(TIMER_SCORE_RATIO * GameState.timer));
@@ -819,8 +825,8 @@ export class MainScreen extends Phaser.Scene {
             this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'bg_winter').setOrigin(0);
             this.bg.setTint(0xcccccc);
 
-            const particles0 = this.add.particles('snow_0').setDepth(5);;
-            const emitter0 = particles0.createEmitter({
+            // const particles0 = this.add.particles('snow_0').setDepth(5);;
+            const emitter0 = this.add.particles(0,0,'snow_0',{
                 x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
                 y: 0,
                 lifespan: 8000,                 // 長めに存在
@@ -832,10 +838,10 @@ export class MainScreen extends Phaser.Scene {
                 gravityY: 10,                   // ゆるやかに引っ張られる
                 frequency: 400,                 // 0.2秒ごとに発生
                 blendMode: 'ADD'                // 発光感（必要なければ 'NORMAL'）
-            });
+            }).setDepth(5);
 
-            const particles1 = this.add.particles('snow_1').setDepth(4);;
-            const emitter1 = particles1.createEmitter({
+            // const particles1 = this.add.particles('snow_1').setDepth(4);;
+            const emitter1 = this.add.particles(0,0,'snow_1',{
                 x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
                 y: 0,
                 lifespan: 16000,                 // 長めに存在
@@ -849,8 +855,8 @@ export class MainScreen extends Phaser.Scene {
                 blendMode: 'ADD'                // 発光感（必要なければ 'NORMAL'）
             });
 
-            const particles2 = this.add.particles('snow_2').setDepth(4);;
-            const emitter2 = particles2.createEmitter({
+            // const particles2 = this.add.particles('snow_2').setDepth(4);;
+            const emitter2 = this.add.particles(0,0,'snow_2',{
                 x: { min: 0, max: this.game.canvas.width, },        // 画面上部全体から発生
                 y: 0,
                 lifespan: 32000,                 // 長めに存在
